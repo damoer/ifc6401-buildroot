@@ -1,0 +1,211 @@
+diff -r 007dfe83abf8 src/video/wayland/SDL_waylandevents.c
+--- a/src/video/wayland/SDL_waylandevents.c	Wed Oct 19 20:50:33 2016 -0700
++++ b/src/video/wayland/SDL_waylandevents.c	Mon May 08 16:06:38 2017 +0200
+@@ -47,10 +47,25 @@
+ #include <unistd.h>
+ #include <xkbcommon/xkbcommon.h>
+ 
++struct SDL_WaylandTouchPoint {
++    SDL_TouchID id;
++    int x;
++    int y;
++
++    struct SDL_WaylandTouchPoint* prev;
++    struct SDL_WaylandTouchPoint* next;
++};
++
++struct SDL_WaylandTouchPointList {
++    struct SDL_WaylandTouchPoint* head;
++    struct SDL_WaylandTouchPoint* tail;
++};
++
+ struct SDL_WaylandInput {
+     SDL_VideoData *display;
+     struct wl_seat *seat;
+     struct wl_pointer *pointer;
++    struct wl_touch *touch;
+     struct wl_keyboard *keyboard;
+     struct zwp_relative_pointer_v1 *relative_pointer;
+     SDL_WindowData *pointer_focus;
+@@ -69,6 +84,84 @@
+     } xkb;
+ };
+ 
++static struct SDL_WaylandTouchPointList touch_points = {NULL, NULL};
++
++static void touch_add(SDL_TouchID id, int x, int y)
++{
++    struct SDL_WaylandTouchPoint* tp = SDL_malloc(sizeof(struct SDL_WaylandTouchPoint));
++
++    tp->id = id;
++    tp->x = x;
++    tp->y = y;
++
++
++    if (touch_points.tail)
++    {
++        touch_points.tail->next = tp;
++        tp->prev = touch_points.tail;
++    }
++    else
++    {
++        touch_points.head = tp;
++        tp->prev = NULL;
++    }
++
++    touch_points.tail = tp;
++    tp->next = NULL;
++}
++
++static void touch_update(SDL_TouchID id, int x, int y)
++{
++    struct SDL_WaylandTouchPoint* tp = touch_points.head;
++
++    while (tp)
++    {
++        if (tp->id == id)
++        {
++            tp->x = x;
++            tp->y = y;
++        }
++
++        tp = tp->next;
++    }
++}
++
++static void touch_del(SDL_TouchID id, int* x, int* y)
++{
++    struct SDL_WaylandTouchPoint* tp = touch_points.head;
++
++    while (tp)
++    {
++        if (tp->id == id)
++        {
++            *x = tp->x;
++            *y = tp->y;
++
++            if (tp->prev)
++            {
++                tp->prev->next = tp->next;
++            }
++            else
++            {
++                touch_points.head = tp->next;
++            }
++
++            if (tp->next)
++            {
++                tp->next->prev = tp->prev;
++            }
++            else
++            {
++                touch_points.tail = tp->prev;
++            }
++
++            SDL_free(tp);
++        }
++
++        tp = tp->next;
++    }
++}
++
+ void
+ Wayland_PumpEvents(_THIS)
+ {
+@@ -267,6 +360,64 @@
+ };
+ 
+ static void
++touch_handler_down(void *data, struct wl_touch *touch, unsigned int serial,
++                   unsigned int timestamp, struct wl_surface *surface,
++                   int id, wl_fixed_t fx, wl_fixed_t fy)
++{
++    int x, y;
++
++    x = wl_fixed_to_int(fx);
++    y = wl_fixed_to_int(fy);
++
++    touch_add(id, x, y);
++    SDL_SendTouch(1, (SDL_FingerID)id, SDL_TRUE, x, y, 1.0f);
++}
++
++static void
++touch_handler_up(void *data, struct wl_touch *touch, unsigned int serial,
++                 unsigned int timestamp, int id)
++{
++    int x, y;
++
++    touch_del(id, &x, &y);
++
++    SDL_SendTouch(1, (SDL_FingerID)id, SDL_FALSE, x, y, 0.0f);
++}
++
++static void
++touch_handler_motion(void *data, struct wl_touch *touch, unsigned int timestamp,
++                     int id, wl_fixed_t fx, wl_fixed_t fy)
++{
++    int x, y;
++
++    x = wl_fixed_to_int(fx);
++    y = wl_fixed_to_int(fy);
++
++    touch_update(id, x, y);
++    SDL_SendTouchMotion(1, (SDL_FingerID)id, x, y, 1.0f);
++}
++
++static void
++touch_handler_frame(void *data, struct wl_touch *touch)
++{
++
++}
++
++static void
++touch_handler_cancel(void *data, struct wl_touch *touch)
++{
++
++}
++
++static const struct wl_touch_listener touch_listener = {
++    touch_handler_down,
++    touch_handler_up,
++    touch_handler_motion,
++    touch_handler_frame,
++    touch_handler_cancel
++};
++
++static void
+ keyboard_handle_keymap(void *data, struct wl_keyboard *keyboard,
+                        uint32_t format, int fd, uint32_t size)
+ {
+@@ -415,6 +566,18 @@
+         input->pointer = NULL;
+     }
+ 
++    if ((caps & WL_SEAT_CAPABILITY_TOUCH) && !input->touch) {
++        SDL_AddTouch(1, "wayland_touch");
++        input->touch = wl_seat_get_touch(seat);
++        wl_touch_set_user_data(input->touch, input);
++        wl_touch_add_listener(input->touch, &touch_listener,
++                                 input);
++    } else if (!(caps & WL_SEAT_CAPABILITY_TOUCH) && input->touch) {
++        SDL_DelTouch(1);
++        wl_touch_destroy(input->touch);
++        input->touch = NULL;
++    }
++
+     if ((caps & WL_SEAT_CAPABILITY_KEYBOARD) && !input->keyboard) {
+         input->keyboard = wl_seat_get_keyboard(seat);
+         wl_keyboard_set_user_data(input->keyboard, input);
+@@ -464,6 +627,12 @@
+     if (input->pointer)
+         wl_pointer_destroy(input->pointer);
+ 
++    if (input->touch)
++    {
++        SDL_DelTouch(1);
++        wl_touch_destroy(input->touch);
++    }
++
+     if (input->seat)
+         wl_seat_destroy(input->seat);
+ 

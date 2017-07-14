@@ -1,0 +1,13 @@
+[Unit]
+Description=load wifi module after /persist
+Wants=network.target
+Before=network.target
+RequiresMountsFor=/persist
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/sbin/modprobe ath6kl_sdio
+
+[Install]
+WantedBy=multi-user.target

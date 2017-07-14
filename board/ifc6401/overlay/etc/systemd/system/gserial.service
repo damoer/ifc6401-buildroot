@@ -1,0 +1,11 @@
+[Unit]
+Description=load gserial module after /persist
+RequiresMountsFor=/persist
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh -c 'modprobe g_serial idVendor=0x2A16 idProduct=0x0016 iSerialNumber=$(cat /persist/usbserial)'
+
+[Install]
+WantedBy=multi-user.target

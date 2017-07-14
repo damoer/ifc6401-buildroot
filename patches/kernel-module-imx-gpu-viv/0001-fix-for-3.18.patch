@@ -1,0 +1,82 @@
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8: .br_filelist_after.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8: .br_filelist_before.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: galcore.ko.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: .galcore.ko.cmd.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: galcore.mod.c.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: galcore.mod.o.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: .galcore.mod.o.cmd.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: galcore.o.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: .galcore.o.cmd.
+diff -ur kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8.orig/kernel-module-imx-gpu-viv-src/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c
+--- kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8.orig/kernel-module-imx-gpu-viv-src/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c	2016-09-19 08:09:18.198053595 +0200
++++ kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src/hal/os/linux/kernel/platform/freescale/gc_hal_kernel_platform_imx6q14.c	2016-09-19 08:15:49.386050709 +0200
+@@ -78,7 +78,6 @@
+ #include <linux/busfreq-imx6.h>
+ #include <linux/reset.h>
+ #else
+-#include <linux/busfreq-imx.h>
+ #include <linux/reset.h>
+ #endif
+ #endif
+@@ -103,6 +102,9 @@
+ #define REG_THERMAL_NOTIFIER(a) register_thermal_notifier(a);
+ #define UNREG_THERMAL_NOTIFIER(a) unregister_thermal_notifier(a);
+ #endif
++#else
++#define REG_THERMAL_NOTIFIER(a)
++#define UNREG_THERMAL_NOTIFIER(a)
+ #endif
+ 
+ #ifndef gcdFSL_CONTIGUOUS_SIZE
+@@ -637,6 +639,7 @@
+     }
+ 
+ 
++#if 0
+ #if gcdENABLE_FSCALE_VAL_ADJUST
+     pdevice = Platform->device;
+     REG_THERMAL_NOTIFIER(&thermal_hot_pm_notifier);
+@@ -647,6 +650,7 @@
+             dev_err(&pdevice->dev, "create gpu3DMinClock attr failed (%d)\n", ret);
+     }
+ #endif
++#endif
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+     imx6sx_optimize_qosc_for_GPU(Platform);
+@@ -701,11 +705,13 @@
+     }
+ #endif
+ 
++#if 0
+ #if gcdENABLE_FSCALE_VAL_ADJUST
+     UNREG_THERMAL_NOTIFIER(&thermal_hot_pm_notifier);
+ 
+     driver_remove_file(pdevice->dev.driver, &driver_attr_gpu3DMinClock);
+ #endif
++#endif
+ 
+     return gcvSTATUS_OK;
+ }
+@@ -880,13 +886,13 @@
+ #ifdef CONFIG_PM
+ static int gpu_runtime_suspend(struct device *dev)
+ {
+-    release_bus_freq(BUS_FREQ_HIGH);
++//    release_bus_freq(BUS_FREQ_HIGH);
+     return 0;
+ }
+ 
+ static int gpu_runtime_resume(struct device *dev)
+ {
+-    request_bus_freq(BUS_FREQ_HIGH);
++//    request_bus_freq(BUS_FREQ_HIGH);
+     return 0;
+ }
+ 
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src/hal/os/linux/kernel/platform/freescale: gc_hal_kernel_platform_imx6q14.o.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src/hal/os/linux/kernel/platform/freescale: .gc_hal_kernel_platform_imx6q14.o.cmd.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src: Module.symvers.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8/kernel-module-imx-gpu-viv-src/.tmp_versions: galcore.mod.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8: .stamp_built.
+Nur in kernel-module-imx-gpu-viv-aa83874b916cf5655cb90498b1ea5691537fdbc8: .stamp_target_installed.

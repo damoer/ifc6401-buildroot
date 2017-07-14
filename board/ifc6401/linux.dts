@@ -1,4 +1,5 @@
 #include "qcom-apq8064-v2.0.dtsi"
+#include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 / {
@@ -56,10 +57,34 @@
 		regulator-boot-on;
 	};
 
-	backlight: backlight{
+	leds {
+		compatible = "gpio-leds";
+
+		beeper {
 			pinctrl-names = "default";
-			compatible = "gpio-backlight";
-			gpios = <&pm8921_gpio 26 GPIO_ACTIVE_HIGH>;
+			pinctrl-0 = <&beeper_pins>;
+			gpio = <&tlmm_pinmux 84 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
+	fan: gpio-fan {
+		compatible = "gpio-fan";
+		status = "okay";
+		pinctrl-0 = <&fan_pins>;
+		pinctrl-names = "default";
+		gpios = <&tlmm_pinmux 28 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <    0 0
+				       4200 7 >;
+		#cooling-cells = <2>; /* min followed by max */
+	};
+
+	backlight: backlight{
+			compatible = "pwm-backlight";
+			pwms = <&pwm 2 640000>;
+			pwm-names = "backlight";
+			default-brightness-level = <5>;
+			brightness-levels = <0 1 4 8 13 20 29 47 83 145 254>;
 			default-on;
 	};
 
@@ -100,6 +125,30 @@
 					pins = "gpio27";
 					drive-strength = <12>;
 					bias-disable;
+				};
+			};
+
+			fan_pins: fan_pinmux {
+				mux {
+					pins = "gpio28";
+					function = "gpio";
+				};
+				conf {
+					pins = "gpio28";
+					drive-strength = <16>;
+					bias-pull-down;
+				};
+			};
+
+			beeper_pins: beeper_pinmux {
+				mux {
+					pins = "gpio84";
+					function = "gpio";
+				};
+				conf {
+					pins = "gpio84";
+					drive-strength = <16>;
+					bias-pull-down;
 				};
 			};
 
@@ -189,7 +238,7 @@
 				};
 
 				l2 {
-					regulator-always-on;
+					bias-pull-down;
 					regulator-min-microvolt = <1200000>;
 					regulator-max-microvolt = <1200000>;
 				};
@@ -226,7 +275,6 @@
 				};
 
 				l8 {
-					regulator-always-on;
 					bias-pull-down;
 					regulator-min-microvolt = <3300000>;
 					regulator-max-microvolt = <3300000>;
@@ -245,7 +293,6 @@
 				};
 
 				l11 {
-					regulator-always-on;
 					bias-pull-down;
 					regulator-min-microvolt = <3000000>;
 					regulator-max-microvolt = <3000000>;
@@ -275,7 +322,6 @@
 				};
 
 				l16 {
-					regulator-always-on;
 					bias-pull-down;
 					regulator-min-microvolt = <2800000>;
 					regulator-max-microvolt = <2800000>;
@@ -324,6 +370,12 @@
 					regulator-max-microvolt = <1250000>;
 				};
 
+				l26 {
+					bias-pull-down;
+					regulator-min-microvolt = < 375000>;
+					regulator-max-microvolt = <1050000>;
+				};
+
 				l27 {
 					regulator-min-microvolt = <1100000>;
 					regulator-max-microvolt = <1100000>;
@@ -363,7 +415,6 @@
 				};
 
 				lvs7 {
-					regulator-always-on;
 					bias-pull-down;
 				};
 
@@ -373,6 +424,16 @@
 					qcom,switch-mode-frequency = <1600000>;
 				};
 			};
+		};
+		
+		pci@1b500000 {
+			status = "ok";
+			vdda-supply = <&pm8921_s3>;
+			vdda_phy-supply = <&pm8921_lvs6>;
+			vdda_refclk-supply = <&ext_3p3v>;
+			pinctrl-0 = <&pcie_pins>;
+			pinctrl-names = "default";
+			perst-gpio = <&tlmm_pinmux 27 GPIO_ACTIVE_LOW>;
 		};
 
 		mdp@5100000 {
@@ -402,14 +463,14 @@
 
 			ports {
 				port@0 {
-                                        reg = <0> ;
+					reg = <0> ;
 					dsi0_in: endpoint {
 						remote-endpoint = <&mdp_dsi1_out>;
 					};
 				};
 
 				port@1 {
-                                        reg = <1> ;
+					reg = <1> ;
 					dsi0_out: endpoint {
 						remote-endpoint = <&dsi85_in>;
 						data-lanes = <0 1 2 3>;
@@ -426,6 +487,7 @@
 		dsi_lvds_panel: panel {
 			reg = <0>;
 			compatible = "nlt,192108AC18";
+			status = "okay";
 
 			backlight = <&backlight>;
 
@@ -435,15 +497,16 @@
 			enable-gpios = <&tlmm_pinmux 80 GPIO_ACTIVE_HIGH>;
 			reset-gpios = <&tlmm_pinmux 32 GPIO_ACTIVE_HIGH>;
 
-			pinctrl-names	= "default";
-			pinctrl-0	= <&display_pins>;
+			pinctrl-names   = "default";
+			pinctrl-0       = <&display_pins>;
 
 			port {
-                		panel_in: endpoint {
+				panel_in: endpoint {
 					remote-endpoint = <&dsi85_out>;
 				};
 			};
-		};
+               };
+
 
 		hdmi-out {
 			compatible = "hdmi-connector";
@@ -505,36 +568,30 @@
 					dsi-lanes = <4>;
 					lvds-channels = <2>;
 					sync-delay = <33>;
-					
-					de-neg-polarity = <0>; // default
+
 					force-24bpp-mode = <1>;
-					lvds-vocm = <0> ; // default
 					lvds-vod-swing-cha = <1>;
 					lvds-vod-swing-chb = <1>;
-					lvds-even-odd-swap = <0>; // default
-					lvds-reverse = <0>; //default
 					lvds-term = <3>; //yes, terminate
-					lvds-cm-adjust-cha = <0>; // default
-					lvds-cm-adjust-chb = <0>; // default
-					
-                                        ports {
+
+					ports {
 						#address-cells = <1>;
-					      	#size-cells = <0>;
+						#size-cells = <0>;
 
 						port@0 {
 							reg = <0>;
 							dsi85_in: endpoint {
-						     		 remote-endpoint = <&dsi0_out>;
-							};		 		     
-						};			     
+								remote-endpoint = <&dsi0_out>;
+							};
+						};
 
 						port@1 {
 							reg = <1>;
 							dsi85_out: endpoint {
-								  remote-endpoint = <&panel_in>;
+								remote-endpoint = <&panel_in>;
 							};
 						};
-                                        };
+					};
 				};
 
 				tca9534@20 {
@@ -552,7 +609,7 @@
 				status = "okay";
 				clock-frequency = <100000>;
 
-				accu-controller {
+				accu: accu-controller {
 					compatible = "sbs,sbs-battery";
 					reg = <0x0b>;
 					sbs,i2c-retry-count = <2>;
@@ -612,6 +669,10 @@
 				pinctrl-names = "default";
 				pinctrl-0 = <&gsbi6_uart_4pins>;
 			};
+
+			i2c@16580000 {
+				status = "disabled";
+			};
 		};
 
 		gsbi7: gsbi@16600000 {
@@ -666,13 +727,16 @@
 
 		qcom,ssbi@500000 {
 			pmic@0 {
+				pwm: pwm {
+					compatible = "qcom,pm8921-pwm";
+					#pwm-cells = <2>;
+				};
+
 				gpio@150 {
 					pwm_bl_gpios: pwm-bl-gpios {
 						pios {
 							pins = "gpio26";
-							bias-disable;
-							function = "normal";
-							qcom,drive-strength = <PMIC_GPIO_STRENGTH_HIGH>;
+							function = "func2";
 							power-source = <PM8921_GPIO_S4>;
 						};
 					};

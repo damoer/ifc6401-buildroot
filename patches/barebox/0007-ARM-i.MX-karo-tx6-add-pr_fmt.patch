@@ -1,0 +1,24 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 2 Mar 2016 17:07:43 +0100
+Subject: [PATCH] ARM: i.MX: karo-tx6: add pr_fmt
+
+Add pr_fmt to print tx6 specific messages with a proper prefix.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ arch/arm/boards/karo-tx6x/board.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boards/karo-tx6x/board.c b/arch/arm/boards/karo-tx6x/board.c
+index 6cb46891b3c5..31c1c3a9ff5d 100644
+--- a/arch/arm/boards/karo-tx6x/board.c
++++ b/arch/arm/boards/karo-tx6x/board.c
+@@ -16,6 +16,8 @@
+  * GNU General Public License for more details.
+  */
+ 
++#define pr_fmt(fmt) "Karo-tx6: " fmt
++
+ #include <common.h>
+ #include <gpio.h>
+ #include <init.h>

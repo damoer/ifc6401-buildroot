@@ -1,0 +1,18 @@
+#!/usr/bin/luajit
+
+local zip = assert(arg[1])
+local misc = assert(io.open("/dev/disk/by-partlabel/misc", "wb"))
+
+-- clear misc partition
+for i=0,1087,1 do
+	misc:write("\0")
+end
+
+misc:seek("set", 0)
+misc:write("boot-recovery")
+misc:seek("set", 64)
+misc:write("recovery\n")
+misc:write("-i\n")
+misc:write(zip, "\0")
+
+misc:close()

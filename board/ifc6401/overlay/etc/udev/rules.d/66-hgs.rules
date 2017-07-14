@@ -1,0 +1,8 @@
+# VCI
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="15ad", ATTR{idProduct}=="4244", GROUP="default", MODE="0660"
+# MT56
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2a16", ATTR{idProduct}=="2042", GROUP="default", MODE="0660"
+# MT77
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2a16", ATTR{idProduct}=="2043", GROUP="default", MODE="0660"
+# auto suspend for MT77
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="2a16", ATTR{idProduct}=="2043", TEST=="power/control", ATTR{power/control}="auto"

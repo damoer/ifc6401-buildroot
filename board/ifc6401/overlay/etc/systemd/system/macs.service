@@ -1,0 +1,13 @@
+[Unit]
+Requires=weston@9.service
+After=weston@9.service
+
+[Service]
+Type=simple
+ExecStart=
+Restart=on-failure
+User=default
+Environment='XDG_RUNTIME_DIR=/run/user/1000' 'WAYLAND_DISPLAY=wayland-0'
+
+[Install]
+WantedBy=graphical.target

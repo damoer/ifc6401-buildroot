@@ -1,0 +1,39 @@
+--- weston-1.11.0/clients/desktop-shell.c.orig	2017-04-26 08:27:37.185226150 +0200
++++ weston-1.11.0/clients/desktop-shell.c	2017-04-26 08:52:22.185215194 +0200
+@@ -693,7 +693,8 @@
+ enum {
+ 	BACKGROUND_SCALE,
+ 	BACKGROUND_SCALE_CROP,
+-	BACKGROUND_TILE
++	BACKGROUND_TILE,
++	BACKGROUND_CENTER
+ };
+ 
+ static void
+@@ -750,6 +751,17 @@
+ 		case BACKGROUND_TILE:
+ 			cairo_pattern_set_extend(pattern, CAIRO_EXTEND_REPEAT);
+ 			break;
++		case BACKGROUND_CENTER:
++			s = (sx < sy) ? sx : sy;
++			if (s < 1) s = 1;
++			/* align center */
++			tx = (im_w - s * allocation.width) * 0.5;
++			ty = (im_h - s * allocation.height) * 0.5;
++			cairo_matrix_init_translate(&matrix, tx, ty);
++			cairo_matrix_scale(&matrix, s, s);
++			cairo_pattern_set_matrix(pattern, &matrix);
++			cairo_pattern_set_extend(pattern, CAIRO_EXTEND_NONE);
++			break;
+ 		}
+ 
+ 		cairo_set_source(cr, pattern);
+@@ -1084,6 +1096,8 @@
+ 		background->type = BACKGROUND_SCALE_CROP;
+ 	} else if (strcmp(type, "tile") == 0) {
+ 		background->type = BACKGROUND_TILE;
++	} else if (strcmp(type, "center") == 0) {
++		background->type = BACKGROUND_CENTER;
+ 	} else {
+ 		background->type = -1;
+ 		fprintf(stderr, "invalid background-type: %s\n",

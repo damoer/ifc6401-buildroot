@@ -1,0 +1,12 @@
+#!/bin/sh
+
+set -e
+
+URI="$1"
+DRIVER="$2"
+
+PRINTER_NAME=hgs_default_printer
+
+/usr/sbin/lpadmin -x $PRINTER_NAME || true
+/usr/sbin/lpadmin -p $PRINTER_NAME -E -v "$URI" -m "$DRIVER" -o pagesize=A4
+/usr/sbin/lpadmin -d $PRINTER_NAME

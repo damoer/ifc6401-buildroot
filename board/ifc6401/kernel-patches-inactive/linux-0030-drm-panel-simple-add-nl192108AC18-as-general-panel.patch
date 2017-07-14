@@ -1,6 +1,6 @@
 --- linux-4.10-rc7/drivers/gpu/drm/panel/panel-simple.c	2017-02-06 00:10:58.000000000 +0100
 +++ linux-4.10-rc7.mod/drivers/gpu/drm/panel/panel-simple.c	2017-02-13 11:58:15.419000707 +0100
-@@ -1164,6 +1174,31 @@
+@@ -1164,6 +1174,30 @@
  	.bus_flags = DRM_BUS_FLAG_PIXDATA_POSEDGE,
  };
  
@@ -15,7 +15,6 @@
 +	.vsync_end = 1080 + 15 + 15,
 +	.vtotal = 1080 + 15 + 15 + 15,
 +	.vrefresh = 60,
-+ 	.flags = DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC,
 +};
 +
 +static const struct panel_desc nlt_192108AC18_desc = {

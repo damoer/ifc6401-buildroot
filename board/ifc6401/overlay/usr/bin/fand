@@ -1,0 +1,56 @@
+#!/usr/bin/env lua
+
+local ffi = require "ffi"
+ffi.cdef "unsigned int sleep(unsigned int seconds);"
+
+function fan_ctrl(on)
+	local f = assert(io.open("/sys/class/thermal/cooling_device0/cur_state", "w"))
+	f:write(on and "1" or "0")
+	f:close()
+end
+
+function read_temp(zone)
+	local f = assert(io.open(string.format("/sys/class/thermal/%s/temp", zone), "r"))
+	local r = f:read("*all")
+	f:close()
+	return tonumber(r)
+end
+
+function decide(temp, trip, hyst)
+	if temp > trip then
+		return true, false
+	elseif temp < (trip - hyst) then
+		return false, true
+	else
+		return false, false
+	end
+end
+
+while true do
+	local fan_on = false
+	local fan_off = false
+
+	-- cpu core0 > 65 degree
+	local ok, res = pcall(read_temp, "thermal_zone0") 
+	if ok then
+		local on, off = decide(res, 65000, 5000)
+		fan_on = fan_on or on
+		fan_off = fan_off or off
+	end
+
+	-- accu > 40 degree
+	ok, res = pcall(read_temp, "thermal_zone4")
+	if ok then
+		local on, off = decide(res, 40000, 5000)
+		fan_on = fan_on or on
+		fan_off = fan_off and off
+	end
+
+	if fan_on then
+		fan_ctrl(true)
+	elseif fan_off then
+		fan_ctrl(false)
+	end
+
+	ffi.C.sleep(5)
+end

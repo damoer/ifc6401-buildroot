@@ -1,0 +1,721 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 2 Mar 2016 17:07:41 +0100
+Subject: [PATCH] ARM: i.MX: karo-tx6: Setup other PMICs
+
+The TX6 boards come with 3 different PMIC variants from which we
+currently only support the ltc3673. Detect the other two by i2c
+address and set them up correctly. The code is based on the karo
+U-Boot port.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ arch/arm/boards/karo-tx6x/Makefile       |   1 +
+ arch/arm/boards/karo-tx6x/board.c        | 167 +++++++------------------------
+ arch/arm/boards/karo-tx6x/pmic-ltc3676.c | 149 +++++++++++++++++++++++++++
+ arch/arm/boards/karo-tx6x/pmic-rn5t567.c | 155 ++++++++++++++++++++++++++++
+ arch/arm/boards/karo-tx6x/pmic-rn5t618.c | 152 ++++++++++++++++++++++++++++
+ arch/arm/boards/karo-tx6x/pmic.h         |   8 ++
+ 6 files changed, 502 insertions(+), 130 deletions(-)
+ create mode 100644 arch/arm/boards/karo-tx6x/pmic-ltc3676.c
+ create mode 100644 arch/arm/boards/karo-tx6x/pmic-rn5t567.c
+ create mode 100644 arch/arm/boards/karo-tx6x/pmic-rn5t618.c
+ create mode 100644 arch/arm/boards/karo-tx6x/pmic.h
+
+diff --git a/arch/arm/boards/karo-tx6x/Makefile b/arch/arm/boards/karo-tx6x/Makefile
+index 01c7a259e9a5..51b7c2d449d8 100644
+--- a/arch/arm/boards/karo-tx6x/Makefile
++++ b/arch/arm/boards/karo-tx6x/Makefile
+@@ -1,2 +1,3 @@
+ obj-y += board.o
+ lwl-y += lowlevel.o
++obj-y += pmic-ltc3676.o pmic-rn5t567.o pmic-rn5t618.o
+diff --git a/arch/arm/boards/karo-tx6x/board.c b/arch/arm/boards/karo-tx6x/board.c
+index b955b81a9c86..6cb46891b3c5 100644
+--- a/arch/arm/boards/karo-tx6x/board.c
++++ b/arch/arm/boards/karo-tx6x/board.c
+@@ -26,122 +26,40 @@
+ #include <mach/bbu.h>
+ #include <mach/imx6.h>
+ #include <mfd/imx6q-iomuxc-gpr.h>
++#include "pmic.h"
+ 
+ #define ETH_PHY_RST	IMX_GPIO_NR(7, 6)
+ #define ETH_PHY_PWR	IMX_GPIO_NR(3, 20)
+ #define ETH_PHY_INT	IMX_GPIO_NR(7, 1)
+-#define DIV_ROUND(n,d)         (((n) + ((d)/2)) / (d))
+-
+-#define LTC3676_BUCK1		0x01
+-#define LTC3676_BUCK2		0x02
+-#define LTC3676_BUCK3		0x03
+-#define LTC3676_BUCK4		0x04
+-#define LTC3676_DVB1A		0x0A
+-#define LTC3676_DVB1B		0x0B
+-#define LTC3676_DVB2A		0x0C
+-#define LTC3676_DVB2B		0x0D
+-#define LTC3676_DVB3A		0x0E
+-#define LTC3676_DVB3B		0x0F
+-#define LTC3676_DVB4A		0x10
+-#define LTC3676_DVB4B		0x11
+-#define LTC3676_MSKPG		0x13
+-#define LTC3676_CLIRQ		0x1f
+-
+-#define LTC3676_BUCK_DVDT_FAST	(1 << 0)
+-#define LTC3676_BUCK_KEEP_ALIVE	(1 << 1)
+-#define LTC3676_BUCK_CLK_RATE_LOW (1 << 2)
+-#define LTC3676_BUCK_PHASE_SEL	(1 << 3)
+-#define LTC3676_BUCK_ENABLE_300	(1 << 4)
+-#define LTC3676_BUCK_PULSE_SKIP	(0 << 5)
+-#define LTC3676_BUCK_BURST_MODE	(1 << 5)
+-#define LTC3676_BUCK_CONTINUOUS	(2 << 5)
+-#define LTC3676_BUCK_ENABLE	(1 << 7)
+-
+-#define LTC3676_PGOOD_MASK	(1 << 5)
+-
+-#define LTC3676_MSKPG_BUCK1	(1 << 0)
+-#define LTC3676_MSKPG_BUCK2	(1 << 1)
+-#define LTC3676_MSKPG_BUCK3	(1 << 2)
+-#define LTC3676_MSKPG_BUCK4	(1 << 3)
+-#define LTC3676_MSKPG_LDO2	(1 << 5)
+-#define LTC3676_MSKPG_LDO3	(1 << 6)
+-#define LTC3676_MSKPG_LDO4	(1 << 7)
+-
+-#define VDD_IO_VAL		mV_to_regval(vout_to_vref(3300 * 10, 5))
+-#define VDD_IO_VAL_LP		mV_to_regval(vout_to_vref(3100 * 10, 5))
+-#define VDD_IO_VAL_2		mV_to_regval(vout_to_vref(3300 * 10, 5_2))
+-#define VDD_IO_VAL_2_LP		mV_to_regval(vout_to_vref(3100 * 10, 5_2))
+-#define VDD_SOC_VAL		mV_to_regval(vout_to_vref(1425 * 10, 6))
+-#define VDD_SOC_VAL_LP		mV_to_regval(vout_to_vref(900 * 10, 6))
+-#define VDD_DDR_VAL		mV_to_regval(vout_to_vref(1500 * 10, 7))
+-#define VDD_DDR_VAL_LP		mV_to_regval(vout_to_vref(1500 * 10, 7))
+-#define VDD_CORE_VAL		mV_to_regval(vout_to_vref(1425 * 10, 8))
+-#define VDD_CORE_VAL_LP		mV_to_regval(vout_to_vref(900 * 10, 8))
+-
+-/* LDO1 */
+-#define R1_1			470
+-#define R2_1			150
+-/* LDO4 */
+-#define R1_4			470
+-#define R2_4			150
+-/* Buck1 */
+-#define R1_5			390
+-#define R2_5			110
+-#define R1_5_2			470
+-#define R2_5_2			150
+-/* Buck2 (SOC) */
+-#define R1_6			150
+-#define R2_6			180
+-/* Buck3 (DDR) */
+-#define R1_7			150
+-#define R2_7			140
+-/* Buck4 (CORE) */
+-#define R1_8			150
+-#define R2_8			180
+-
+-/* calculate voltages in 10mV */
+-#define R1(idx)			R1_##idx
+-#define R2(idx)			R2_##idx
+-
+-#define vout_to_vref(vout, idx)	((vout) * R2(idx) / (R1(idx) + R2(idx)))
+-#define vref_to_vout(vref, idx)	DIV_ROUND_UP((vref) * (R1(idx) + R2(idx)), R2(idx))
+-
+-#define mV_to_regval(mV)	DIV_ROUND(((((mV) < 4125) ? 4125 : (mV)) - 4125), 125)
+-#define regval_to_mV(v)		(((v) * 125 + 4125))
+-
+-static struct ltc3673_regs {
+-	u8 addr;
+-	u8 val;
+-	u8 mask;
+-} ltc3676_regs[] = {
+-	{ LTC3676_MSKPG, ~LTC3676_MSKPG_BUCK1, },
+-	{ LTC3676_DVB2B, VDD_SOC_VAL_LP | LTC3676_PGOOD_MASK, ~0x3f, },
+-	{ LTC3676_DVB3B, VDD_DDR_VAL_LP, ~0x3f, },
+-	{ LTC3676_DVB4B, VDD_CORE_VAL_LP | LTC3676_PGOOD_MASK, ~0x3f, },
+-	{ LTC3676_DVB2A, VDD_SOC_VAL, ~0x3f, },
+-	{ LTC3676_DVB3A, VDD_DDR_VAL, ~0x3f, },
+-	{ LTC3676_DVB4A, VDD_CORE_VAL, ~0x3f, },
+-	{ LTC3676_BUCK1, LTC3676_BUCK_BURST_MODE | LTC3676_BUCK_CLK_RATE_LOW, },
+-	{ LTC3676_BUCK2, LTC3676_BUCK_BURST_MODE, },
+-	{ LTC3676_BUCK3, LTC3676_BUCK_BURST_MODE, },
+-	{ LTC3676_BUCK4, LTC3676_BUCK_BURST_MODE, },
+-	{ LTC3676_CLIRQ, 0, }, /* clear interrupt status */
+-};
+ 
+-static struct ltc3673_regs ltc3676_regs_2[] = {
+-	{ LTC3676_DVB1B, VDD_IO_VAL_2_LP | LTC3676_PGOOD_MASK, ~0x3f, },
+-	{ LTC3676_DVB1A, VDD_IO_VAL_2, ~0x3f, },
+-};
++static void eth_init(void)
++{
++	void __iomem *iomux = (void *)MX6_IOMUXC_BASE_ADDR;
++	uint32_t val;
++
++	val = readl(iomux + IOMUXC_GPR1);
++	val |= IMX6Q_GPR1_ENET_CLK_SEL_ANATOP;
++	writel(val, iomux + IOMUXC_GPR1);
++}
+ 
++static struct {
++	unsigned char addr;
++	int (*init)(struct i2c_client *client);
++	const char *name;
++} i2c_addrs[] = {
++	{ 0x3c, ltc3676_pmic_setup, "ltc3676" },
++	{ 0x32, rn5t618_pmic_setup, "rn5t618" },
++	{ 0x33, rn5t567_pmic_setup, "rn5t567" },
++};
+ 
+-static int setup_pmic_voltages(void)
++int setup_pmic_voltages(void)
+ {
+-	struct i2c_adapter *adapter = NULL;
++	struct i2c_adapter *adapter;
+ 	struct i2c_client client;
+-	int addr = 0x3c;
+-	int bus = 0;
++	int ret = -ENODEV;
+ 	int i;
+-	struct ltc3673_regs *r;
++	int bus = 0;
++	uint8_t reg;
+ 
+ 	adapter = i2c_get_adapter(bus);
+ 	if (!adapter) {
+@@ -150,37 +68,26 @@ static int setup_pmic_voltages(void)
+ 	}
+ 
+ 	client.adapter = adapter;
+-	client.addr = addr;
+ 
+-	r = ltc3676_regs;
++	for (i = 0; i < ARRAY_SIZE(i2c_addrs); i++) {
++		client.addr = i2c_addrs[i].addr;
+ 
+-	for (i = 0; i < ARRAY_SIZE(ltc3676_regs); i++, r++) {
+-		if (i2c_write_reg(&client, r->addr, &r->val, 1) != 1) {
+-			pr_err("i2c write error\n");
+-			return -EIO;
+-		}
+-	}
++		pr_debug("Probing for I2C dev 0x%02x\n", client.addr);
+ 
+-	r = ltc3676_regs_2;
+-
+-	for (i = 0; i < ARRAY_SIZE(ltc3676_regs_2); i++, r++) {
+-		if (i2c_write_reg(&client, r->addr, &r->val, 1) != 1) {
+-			pr_err("i2c write error\n");
+-			return -EIO;
++		ret = i2c_write_reg(&client, 0x00, &reg, 0);
++		if (ret == 0) {
++			pr_info("Detected %s PMIC\n", i2c_addrs[i].name);
++			ret = i2c_addrs[i].init(&client);
++			goto out;
+ 		}
+ 	}
+ 
+-	return 0;
+-}
++	pr_err("No PMIC found\n");
++out:
++	if (ret)
++		pr_err("PMIC setup failed with %s\n", strerror(-ret));
+ 
+-static void eth_init(void)
+-{
+-	void __iomem *iomux = (void *)MX6_IOMUXC_BASE_ADDR;
+-	uint32_t val;
+-
+-	val = readl(iomux + IOMUXC_GPR1);
+-	val |= IMX6Q_GPR1_ENET_CLK_SEL_ANATOP;
+-	writel(val, iomux + IOMUXC_GPR1);
++	return ret;
+ }
+ 
+ #define IMX6_SRC_SBMR1   0x04
+diff --git a/arch/arm/boards/karo-tx6x/pmic-ltc3676.c b/arch/arm/boards/karo-tx6x/pmic-ltc3676.c
+new file mode 100644
+index 000000000000..0cddb929fc1f
+--- /dev/null
++++ b/arch/arm/boards/karo-tx6x/pmic-ltc3676.c
+@@ -0,0 +1,149 @@
++/*
++ * Copyright (C) 2014 Lothar Waßmann <LW@KARO-electronics.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <common.h>
++#include <i2c/i2c.h>
++#include "pmic.h"
++
++#define LTC3676_BUCK1		0x01
++#define LTC3676_BUCK2		0x02
++#define LTC3676_BUCK3		0x03
++#define LTC3676_BUCK4		0x04
++#define LTC3676_DVB1A		0x0A
++#define LTC3676_DVB1B		0x0B
++#define LTC3676_DVB2A		0x0C
++#define LTC3676_DVB2B		0x0D
++#define LTC3676_DVB3A		0x0E
++#define LTC3676_DVB3B		0x0F
++#define LTC3676_DVB4A		0x10
++#define LTC3676_DVB4B		0x11
++#define LTC3676_MSKPG		0x13
++#define LTC3676_CLIRQ		0x1f
++
++#define LTC3676_BUCK_DVDT_FAST	(1 << 0)
++#define LTC3676_BUCK_KEEP_ALIVE	(1 << 1)
++#define LTC3676_BUCK_CLK_RATE_LOW (1 << 2)
++#define LTC3676_BUCK_PHASE_SEL	(1 << 3)
++#define LTC3676_BUCK_ENABLE_300	(1 << 4)
++#define LTC3676_BUCK_PULSE_SKIP	(0 << 5)
++#define LTC3676_BUCK_BURST_MODE	(1 << 5)
++#define LTC3676_BUCK_CONTINUOUS	(2 << 5)
++#define LTC3676_BUCK_ENABLE	(1 << 7)
++
++#define LTC3676_PGOOD_MASK	(1 << 5)
++
++#define LTC3676_MSKPG_BUCK1	(1 << 0)
++#define LTC3676_MSKPG_BUCK2	(1 << 1)
++#define LTC3676_MSKPG_BUCK3	(1 << 2)
++#define LTC3676_MSKPG_BUCK4	(1 << 3)
++#define LTC3676_MSKPG_LDO2	(1 << 5)
++#define LTC3676_MSKPG_LDO3	(1 << 6)
++#define LTC3676_MSKPG_LDO4	(1 << 7)
++
++#define VDD_IO_VAL		mV_to_regval(vout_to_vref(3300 * 10, 5))
++#define VDD_IO_VAL_LP		mV_to_regval(vout_to_vref(3100 * 10, 5))
++#define VDD_IO_VAL_2		mV_to_regval(vout_to_vref(3300 * 10, 5_2))
++#define VDD_IO_VAL_2_LP		mV_to_regval(vout_to_vref(3100 * 10, 5_2))
++#define VDD_SOC_VAL		mV_to_regval(vout_to_vref(1425 * 10, 6))
++#define VDD_SOC_VAL_LP		mV_to_regval(vout_to_vref(900 * 10, 6))
++#define VDD_DDR_VAL		mV_to_regval(vout_to_vref(1500 * 10, 7))
++#define VDD_DDR_VAL_LP		mV_to_regval(vout_to_vref(1500 * 10, 7))
++#define VDD_CORE_VAL		mV_to_regval(vout_to_vref(1425 * 10, 8))
++#define VDD_CORE_VAL_LP		mV_to_regval(vout_to_vref(900 * 10, 8))
++
++/* LDO1 */
++#define R1_1			470
++#define R2_1			150
++/* LDO4 */
++#define R1_4			470
++#define R2_4			150
++/* Buck1 */
++#define R1_5			390
++#define R2_5			110
++#define R1_5_2			470
++#define R2_5_2			150
++/* Buck2 (SOC) */
++#define R1_6			150
++#define R2_6			180
++/* Buck3 (DDR) */
++#define R1_7			150
++#define R2_7			140
++/* Buck4 (CORE) */
++#define R1_8			150
++#define R2_8			180
++
++/* calculate voltages in 10mV */
++#define R1(idx)			R1_##idx
++#define R2(idx)			R2_##idx
++
++#define vout_to_vref(vout, idx)	((vout) * R2(idx) / (R1(idx) + R2(idx)))
++#define vref_to_vout(vref, idx)	DIV_ROUND_UP((vref) * (R1(idx) + R2(idx)), R2(idx))
++
++#define mV_to_regval(mV)	DIV_ROUND(((((mV) < 4125) ? 4125 : (mV)) - 4125), 125)
++#define regval_to_mV(v)		(((v) * 125 + 4125))
++
++static struct ltc3673_regs {
++	u8 addr;
++	u8 val;
++	u8 mask;
++} ltc3676_regs[] = {
++	{ LTC3676_MSKPG, ~LTC3676_MSKPG_BUCK1, },
++	{ LTC3676_DVB2B, VDD_SOC_VAL_LP | LTC3676_PGOOD_MASK, ~0x3f, },
++	{ LTC3676_DVB3B, VDD_DDR_VAL_LP, ~0x3f, },
++	{ LTC3676_DVB4B, VDD_CORE_VAL_LP | LTC3676_PGOOD_MASK, ~0x3f, },
++	{ LTC3676_DVB2A, VDD_SOC_VAL, ~0x3f, },
++	{ LTC3676_DVB3A, VDD_DDR_VAL, ~0x3f, },
++	{ LTC3676_DVB4A, VDD_CORE_VAL, ~0x3f, },
++	{ LTC3676_BUCK1, LTC3676_BUCK_BURST_MODE | LTC3676_BUCK_CLK_RATE_LOW, },
++	{ LTC3676_BUCK2, LTC3676_BUCK_BURST_MODE, },
++	{ LTC3676_BUCK3, LTC3676_BUCK_BURST_MODE, },
++	{ LTC3676_BUCK4, LTC3676_BUCK_BURST_MODE, },
++	{ LTC3676_CLIRQ, 0, }, /* clear interrupt status */
++};
++
++static struct ltc3673_regs ltc3676_regs_2[] = {
++	{ LTC3676_DVB1B, VDD_IO_VAL_2_LP | LTC3676_PGOOD_MASK, ~0x3f, },
++	{ LTC3676_DVB1A, VDD_IO_VAL_2, ~0x3f, },
++};
++
++
++int ltc3676_pmic_setup(struct i2c_client *client)
++{
++	int i;
++	struct ltc3673_regs *r;
++
++	r = ltc3676_regs;
++
++	for (i = 0; i < ARRAY_SIZE(ltc3676_regs); i++, r++) {
++		if (i2c_write_reg(client, r->addr, &r->val, 1) != 1) {
++			pr_err("i2c write error\n");
++			return -EIO;
++		}
++	}
++
++	r = ltc3676_regs_2;
++
++	for (i = 0; i < ARRAY_SIZE(ltc3676_regs_2); i++, r++) {
++		if (i2c_write_reg(client, r->addr, &r->val, 1) != 1) {
++			pr_err("i2c write error\n");
++			return -EIO;
++		}
++	}
++
++	return 0;
++}
++
+diff --git a/arch/arm/boards/karo-tx6x/pmic-rn5t567.c b/arch/arm/boards/karo-tx6x/pmic-rn5t567.c
+new file mode 100644
+index 000000000000..f50f300f88ca
+--- /dev/null
++++ b/arch/arm/boards/karo-tx6x/pmic-rn5t567.c
+@@ -0,0 +1,155 @@
++/*
++ * Copyright (C) 2014 Lothar Waßmann <LW@KARO-electronics.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++#include <common.h>
++#include <i2c/i2c.h>
++#include "pmic.h"
++
++#define RN5T567_NOETIMSET	0x11
++#define RN5T567_LDORTC1_SLOT	0x2a
++#define RN5T567_DC1CTL		0x2c
++#define RN5T567_DC1CTL2		0x2d
++#define RN5T567_DC2CTL		0x2e
++#define RN5T567_DC2CTL2		0x2f
++#define RN5T567_DC3CTL		0x30
++#define RN5T567_DC3CTL2		0x31
++#define RN5T567_DC1DAC		0x36 /* CORE */
++#define RN5T567_DC2DAC		0x37 /* SOC */
++#define RN5T567_DC3DAC		0x38 /* DDR */
++#define RN5T567_DC1DAC_SLP	0x3b
++#define RN5T567_DC2DAC_SLP	0x3c
++#define RN5T567_DC3DAC_SLP	0x3d
++#define RN5T567_LDOEN1		0x44
++#define RN5T567_LDODIS		0x46
++#define RN5T567_LDOEN2		0x48
++#define RN5T567_LDO3DAC		0x4e /* IO */
++#define RN5T567_LDORTC1DAC	0x56 /* VBACKUP */
++
++#define NOETIMSET_DIS_OFF_NOE_TIM	(1 << 3)
++
++#define VDD_RTC_VAL		mV_to_regval_rtc(3000)
++#define VDD_HIGH_VAL		mV_to_regval3(3000)
++#define VDD_HIGH_VAL_LP		mV_to_regval3(3000)
++#define VDD_CORE_VAL		mV_to_regval(1350)		/* DCDC1 */
++#define VDD_CORE_VAL_LP		mV_to_regval(900)
++#define VDD_SOC_VAL		mV_to_regval(1350)		/* DCDC2 */
++#define VDD_SOC_VAL_LP		mV_to_regval(900)
++#define VDD_DDR_VAL		mV_to_regval(1350)		/* DCDC3 */
++#define VDD_DDR_VAL_LP		mV_to_regval(1350)
++
++/* calculate voltages in 10mV */
++#define v2r(v,n,m)		DIV_ROUND(((((v) < (n)) ? (n) : (v)) - (n)), (m))
++#define r2v(r,n,m)		(((r) * (m) + (n)) / 10)
++
++/* DCDC1-3 */
++#define mV_to_regval(mV)	v2r((mV) * 10, 6000, 125)
++#define regval_to_mV(r)		r2v(r, 6000, 125)
++
++/* LDO1-2 */
++#define mV_to_regval2(mV)	v2r((mV) * 10, 9000, 250)
++#define regval2_to_mV(r)	r2v(r, 9000, 250)
++
++/* LDO3 */
++#define mV_to_regval3(mV)	v2r((mV) * 10, 6000, 250)
++#define regval3_to_mV(r)	r2v(r, 6000, 250)
++
++/* LDORTC */
++#define mV_to_regval_rtc(mV)	v2r((mV) * 10, 17000, 250)
++#define regval_rtc_to_mV(r)	r2v(r, 17000, 250)
++
++static struct rn5t567_regs {
++	u8 addr;
++	u8 val;
++	u8 mask;
++} rn5t567_regs[] = {
++	{ RN5T567_NOETIMSET, NOETIMSET_DIS_OFF_NOE_TIM | 0x5, },
++	{ RN5T567_DC1DAC, VDD_CORE_VAL, },
++	{ RN5T567_DC2DAC, VDD_SOC_VAL, },
++	{ RN5T567_DC3DAC, VDD_DDR_VAL, },
++	{ RN5T567_DC1DAC_SLP, VDD_CORE_VAL_LP, },
++	{ RN5T567_DC2DAC_SLP, VDD_SOC_VAL_LP, },
++	{ RN5T567_DC3DAC_SLP, VDD_DDR_VAL_LP, },
++	{ RN5T567_LDOEN1, 0x01f, ~0x1f, },
++	{ RN5T567_LDOEN2, 0x10, ~0x30, },
++	{ RN5T567_LDODIS, 0x00, },
++	{ RN5T567_LDO3DAC, VDD_HIGH_VAL, },
++	{ RN5T567_LDORTC1DAC, VDD_RTC_VAL, },
++	{ RN5T567_LDORTC1_SLOT, 0x0f, ~0x3f, },
++};
++
++static int rn5t567_setup_regs(struct i2c_client *client, struct rn5t567_regs *r,
++			size_t count)
++{
++	int ret;
++	int i;
++
++	for (i = 0; i < count; i++, r++) {
++#ifdef DEBUG
++		unsigned char value;
++
++		ret = i2c_read_reg(client, r->addr, &value, 1);
++		if ((value & ~r->mask) != r->val) {
++			pr_debug("Changing PMIC reg %02x from %02x to %02x\n",
++				r->addr, value, r->val);
++		}
++		if (ret != 1) {
++			pr_debug("%s: failed to read PMIC register %02x: %d\n",
++				__func__, r->addr, ret);
++			return ret;
++		}
++#endif
++		ret = i2c_write_reg(client, r->addr, &r->val, 1);
++		if (ret != 1) {
++			pr_err("%s: failed to write PMIC register %02x: %d\n",
++				__func__, r->addr, ret);
++			return ret;
++		}
++	}
++	return 0;
++}
++
++int rn5t567_pmic_setup(struct i2c_client *client)
++{
++	int ret;
++	unsigned char value;
++
++	ret = i2c_read_reg(client, 0x11, &value, 1);
++	if (ret != 1) {
++		pr_err("i2c read error\n");
++		return ret;
++	}
++
++	ret = rn5t567_setup_regs(client, rn5t567_regs,
++				ARRAY_SIZE(rn5t567_regs));
++	if (ret)
++		return ret;
++
++	ret = i2c_read_reg(client, RN5T567_DC1DAC, &value, 1);
++	if (ret == 1)
++		pr_debug("VDDCORE set to %umV\n", regval_to_mV(value));
++	else
++		pr_err("i2c read error\n");
++
++	ret = i2c_read_reg(client, RN5T567_DC2DAC, &value, 1);
++	if (ret == 1) {
++		pr_debug("VDDSOC  set to %umV\n", regval_to_mV(value));
++	} else {
++		pr_err("i2c read error\n");
++		return ret;
++	}
++
++	return 0;
++}
+diff --git a/arch/arm/boards/karo-tx6x/pmic-rn5t618.c b/arch/arm/boards/karo-tx6x/pmic-rn5t618.c
+new file mode 100644
+index 000000000000..7c722c261320
+--- /dev/null
++++ b/arch/arm/boards/karo-tx6x/pmic-rn5t618.c
+@@ -0,0 +1,152 @@
++/*
++ * Copyright (C) 2014 Lothar Waßmann <LW@KARO-electronics.de>
++ *
++ * See file CREDITS for list of people who contributed to this
++ * project.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <common.h>
++#include <i2c/i2c.h>
++#include "pmic.h"
++
++#define RN5T618_NOETIMSET	0x11
++#define RN5T618_LDORTC1_SLOT	0x2a
++#define RN5T618_DC1CTL		0x2c
++#define RN5T618_DC1CTL2		0x2d
++#define RN5T618_DC2CTL		0x2e
++#define RN5T618_DC2CTL2		0x2f
++#define RN5T618_DC3CTL		0x30
++#define RN5T618_DC3CTL2		0x31
++#define RN5T618_DC1DAC		0x36 /* CORE */
++#define RN5T618_DC2DAC		0x37 /* SOC */
++#define RN5T618_DC3DAC		0x38 /* DDR */
++#define RN5T618_DC1DAC_SLP	0x3b
++#define RN5T618_DC2DAC_SLP	0x3c
++#define RN5T618_DC3DAC_SLP	0x3d
++#define RN5T618_LDOEN1		0x44
++#define RN5T618_LDODIS		0x46
++#define RN5T618_LDOEN2		0x48
++#define RN5T618_LDO3DAC		0x4e /* IO */
++#define RN5T618_LDORTCDAC	0x56 /* VBACKUP */
++
++#define VDD_RTC_VAL		mV_to_regval_rtc(3000)
++#define VDD_HIGH_VAL		mV_to_regval3(3000)
++#define VDD_HIGH_VAL_LP		mV_to_regval3(3000)
++#define VDD_CORE_VAL		mV_to_regval(1425)		/* DCDC1 */
++#define VDD_CORE_VAL_LP		mV_to_regval(900)
++#define VDD_SOC_VAL		mV_to_regval(1425)		/* DCDC2 */
++#define VDD_SOC_VAL_LP		mV_to_regval(900)
++#define VDD_DDR_VAL		mV_to_regval(1500)		/* DCDC3 */
++#define VDD_DDR_VAL_LP		mV_to_regval(1500)
++
++/* calculate voltages in 10mV */
++#define v2r(v,n,m)		DIV_ROUND(((((v) < (n)) ? (n) : (v)) - (n)), (m))
++#define r2v(r,n,m)		(((r) * (m) + (n)) / 10)
++
++/* DCDC1-3 */
++#define mV_to_regval(mV)	v2r((mV) * 10, 6000, 125)
++#define regval_to_mV(r)		r2v(r, 6000, 125)
++
++/* LDO1-2 */
++#define mV_to_regval2(mV)	v2r((mV) * 10, 9000, 250)
++#define regval2_to_mV(r)	r2v(r, 9000, 250)
++
++/* LDO3 */
++#define mV_to_regval3(mV)	v2r((mV) * 10, 6000, 250)
++#define regval3_to_mV(r)	r2v(r, 6000, 250)
++
++/* LDORTC */
++#define mV_to_regval_rtc(mV)	v2r((mV) * 10, 17000, 250)
++#define regval_rtc_to_mV(r)	r2v(r, 17000, 250)
++
++static struct rn5t618_regs {
++	u8 addr;
++	u8 val;
++	u8 mask;
++} rn5t618_regs[] = {
++	{ RN5T618_NOETIMSET, 0, },
++	{ RN5T618_DC1DAC, VDD_CORE_VAL, },
++	{ RN5T618_DC2DAC, VDD_SOC_VAL, },
++	{ RN5T618_DC3DAC, VDD_DDR_VAL, },
++	{ RN5T618_DC1DAC_SLP, VDD_CORE_VAL_LP, },
++	{ RN5T618_DC2DAC_SLP, VDD_SOC_VAL_LP, },
++	{ RN5T618_DC3DAC_SLP, VDD_DDR_VAL_LP, },
++	{ RN5T618_LDOEN1, 0x01f, ~0x1f, },
++	{ RN5T618_LDOEN2, 0x10, ~0x30, },
++	{ RN5T618_LDODIS, 0x00, },
++	{ RN5T618_LDO3DAC, VDD_HIGH_VAL, },
++	{ RN5T618_LDORTCDAC, VDD_RTC_VAL, },
++	{ RN5T618_LDORTC1_SLOT, 0x0f, ~0x3f, },
++};
++
++static int rn5t618_setup_regs(struct i2c_client *client, struct rn5t618_regs *r,
++			size_t count)
++{
++	int ret;
++	int i;
++
++	for (i = 0; i < count; i++, r++) {
++#ifdef DEBUG
++		unsigned char value;
++
++		ret = i2c_read_reg(client, r->addr, &value, 1);
++		if ((value & ~r->mask) != r->val) {
++			pr_debug("Changing PMIC reg %02x from %02x to %02x\n",
++				r->addr, value, r->val);
++		}
++		if (ret != 1) {
++			pr_debug("%s: failed to read PMIC register %02x: %d\n",
++				__func__, r->addr, ret);
++			return ret;
++		}
++#endif
++		ret = i2c_write_reg(client, r->addr, &r->val, 1);
++		if (ret != 1) {
++			pr_err("%s: failed to write PMIC register %02x: %d\n",
++				__func__, r->addr, ret);
++			return ret;
++		}
++	}
++	return 0;
++}
++
++int rn5t618_pmic_setup(struct i2c_client *client)
++{
++	int ret;
++	unsigned char value;
++
++	ret = i2c_read_reg(client, 0x11, &value, 1);
++	if (ret) {
++		pr_err("i2c read error\n");
++		return ret;
++	}
++
++	ret = rn5t618_setup_regs(client, rn5t618_regs,
++				ARRAY_SIZE(rn5t618_regs));
++	if (ret)
++		return ret;
++
++	ret = i2c_read_reg(client, RN5T618_DC1DAC, &value, 1);
++	if (ret == 1)
++		pr_debug("VDDCORE set to %umV\n", regval_to_mV(value));
++	else
++		pr_err("i2c read error\n");
++
++	ret = i2c_read_reg(client, RN5T618_DC2DAC, &value, 1);
++	if (ret == 1)
++		pr_debug("VDDSOC  set to %umV\n", regval_to_mV(value));
++	else
++		pr_err("i2c read error\n");
++
++	return ret;
++}
+diff --git a/arch/arm/boards/karo-tx6x/pmic.h b/arch/arm/boards/karo-tx6x/pmic.h
+new file mode 100644
+index 000000000000..2427a52e50c9
+--- /dev/null
++++ b/arch/arm/boards/karo-tx6x/pmic.h
+@@ -0,0 +1,8 @@
++
++#include <i2c/i2c.h>
++
++#define DIV_ROUND(n,d)         (((n) + ((d)/2)) / (d))
++
++int ltc3676_pmic_setup(struct i2c_client *client);
++int rn5t567_pmic_setup(struct i2c_client *client);
++int rn5t618_pmic_setup(struct i2c_client *client);

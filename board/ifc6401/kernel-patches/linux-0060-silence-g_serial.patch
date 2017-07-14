@@ -1,0 +1,12 @@
+--- linux-4.9.20/drivers/usb/gadget/function/u_serial.c.orig	2017-04-24 15:38:40.654310184 +0200
++++ linux-4.9.20/drivers/usb/gadget/function/u_serial.c	2017-04-24 15:40:00.446309595 +0200
+@@ -587,9 +587,6 @@
+ 		if (!tty_throttled(tty)) {
+ 			if (do_push)
+ 				tasklet_schedule(&port->push);
+-			else
+-				pr_warn("ttyGS%d: RX not scheduled?\n",
+-					port->port_num);
+ 		}
+ 	}
+ 

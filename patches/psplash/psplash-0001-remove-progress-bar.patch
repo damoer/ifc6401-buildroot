@@ -1,0 +1,29 @@
+--- a/psplash.c	2014-10-31 16:24:47.000000000 +0100
++++ b/psplash2.c	2017-02-01 15:43:39.662549991 +0100
+@@ -118,7 +118,6 @@
+ 
+   if (!strcmp(command,"PROGRESS")) 
+     {
+-      psplash_draw_progress (fb, atoi(strtok(NULL,"\0")));
+     } 
+   else if (!strcmp(command,"MSG")) 
+     {
+@@ -289,18 +288,6 @@
+ 			 POKY_IMG_ROWSTRIDE,
+ 			 POKY_IMG_RLE_PIXEL_DATA);
+ 
+-  /* Draw progress bar border */
+-  psplash_fb_draw_image (fb, 
+-			 (fb->width  - BAR_IMG_WIDTH)/2, 
+-			 SPLIT_LINE_POS(fb),
+-			 BAR_IMG_WIDTH,
+-			 BAR_IMG_HEIGHT,
+-			 BAR_IMG_BYTES_PER_PIXEL,
+-			 BAR_IMG_ROWSTRIDE,
+-			 BAR_IMG_RLE_PIXEL_DATA);
+-
+-  psplash_draw_progress (fb, 0);
+-
+ #ifdef PSPLASH_STARTUP_MSG
+   psplash_draw_msg (fb, PSPLASH_STARTUP_MSG);
+ #endif

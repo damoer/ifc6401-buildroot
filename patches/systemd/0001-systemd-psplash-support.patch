@@ -1,0 +1,79 @@
+diff -ur systemd-228.orig/src/core/manager.c systemd-228/src/core/manager.c
+--- systemd-228.orig/src/core/manager.c	2016-03-23 09:21:56.197520574 +0100
++++ systemd-228/src/core/manager.c	2016-03-23 10:24:40.289535520 +0100
+@@ -2200,6 +2200,50 @@
+                         log_error_errno(errno, "Failed to write Plymouth message: %m");
+ }
+ 
++void manager_send_unit_psplash(Manager *m, Unit *u) {
++	char *tmpdir;
++	char pipe_path[PATH_MAX + 1];
++	_cleanup_close_ int  pipe_fd = -1;
++	_cleanup_free_ char *message = NULL;
++	int n = 0;
++	double d;
++
++	tmpdir = getenv("TMPDIR");
++
++	if (!tmpdir)
++		tmpdir = "/tmp";
++
++	pipe_path[PATH_MAX] = '\0';
++	snprintf(pipe_path, sizeof(PATH_MAX), "%s/psplash_fifo", tmpdir);
++
++	if ((pipe_fd = open(pipe_path,O_WRONLY|O_NONBLOCK)) != -1) {
++		if (dual_timestamp_is_set(&m->finish_timestamp))
++			d = 1.0;
++		else
++			d = 1.0 - ((double) hashmap_size(m->jobs) / (double) m->n_installed_jobs);
++
++		if (asprintf(&message, "PROGRESS %d", (int)(100.0 * d), &n) < 0) {
++			log_oom();
++			return;
++		}
++
++		errno = 0;
++		if (write(pipe_fd, message, n + 1) != n + 1)
++	                if (!IN_SET(errno, EPIPE, EAGAIN, ENOENT, ECONNREFUSED, ECONNRESET, ECONNABORTED))
++	                        log_error_errno(errno, "Failed to write PSPlash message: %m");
++
++		if (asprintf(&message, "MSG %s", u->id, &n) < 0) {
++			log_oom();
++			return;
++		}
++
++		errno = 0;
++		if (write(pipe_fd, message, n + 1) != n + 1)
++	                if (!IN_SET(errno, EPIPE, EAGAIN, ENOENT, ECONNREFUSED, ECONNRESET, ECONNABORTED))
++	                        log_error_errno(errno, "Failed to write PSPlash message: %m");
++	}
++}
++
+ int manager_open_serialization(Manager *m, FILE **_f) {
+         const char *path;
+         int fd = -1;
+diff -ur systemd-228.orig/src/core/manager.h systemd-228/src/core/manager.h
+--- systemd-228.orig/src/core/manager.h	2016-03-23 09:21:56.197520574 +0100
++++ systemd-228/src/core/manager.h	2016-03-23 10:17:39.713533850 +0100
+@@ -356,6 +356,7 @@
+ 
+ void manager_send_unit_audit(Manager *m, Unit *u, int type, bool success);
+ void manager_send_unit_plymouth(Manager *m, Unit *u);
++void manager_send_unit_psplash(Manager *m, Unit *u);
+ 
+ bool manager_unit_inactive_or_pending(Manager *m, const char *name);
+ 
+diff -ur systemd-228.orig/src/core/unit.c systemd-228/src/core/unit.c
+--- systemd-228.orig/src/core/unit.c	2016-03-23 09:21:56.197520574 +0100
++++ systemd-228/src/core/unit.c	2016-03-23 10:17:39.713533850 +0100
+@@ -1970,8 +1970,10 @@
+                         u->in_audit = true;
+                 }
+ 
+-                if (!UNIT_IS_ACTIVE_OR_RELOADING(os))
++                if (!UNIT_IS_ACTIVE_OR_RELOADING(os)) {
+                         manager_send_unit_plymouth(m, u);
++                        manager_send_unit_psplash(m, u);
++                }
+ 
+         } else {

@@ -1,0 +1,1 @@
+default 1000 default -1 =hgs /home/default /bin/sh video,wheel,netdev,dialout,lp,plugdev application user 

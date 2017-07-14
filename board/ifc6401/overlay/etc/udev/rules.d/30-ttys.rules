@@ -1,0 +1,1 @@
+KERNEL=="ttyMSM*", RUN+="/bin/stty -F /dev/%k 115200"

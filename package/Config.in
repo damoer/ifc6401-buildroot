@@ -1804,4 +1804,8 @@ menu "Text editors and viewers"
 	source "package/vim/Config.in"
 endmenu
 
+menu "HGS extra packages"
+	source "package/hgs/user-session-units/Config.in"
+endmenu
+
 endmenu

@@ -1,0 +1,9 @@
+[Unit]
+Description=Fand system fan management daemon
+RequiresMountsFor=/persist
+
+[Service]
+ExecStart=/bin/fand
+
+[Install]
+WantedBy=multi-user.target

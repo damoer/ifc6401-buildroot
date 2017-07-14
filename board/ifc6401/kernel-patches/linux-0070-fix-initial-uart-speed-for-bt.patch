@@ -1,0 +1,11 @@
+--- linux-4.9.20/drivers/tty/serial/msm_serial.c.new	2017-04-28 11:39:23.679866417 +0200
++++ linux-4.9.20/drivers/tty/serial/msm_serial.c	2017-04-28 11:35:58.763867928 +0200
+@@ -1775,6 +1775,8 @@
+ 		msm_port->pclk = devm_clk_get(&pdev->dev, "iface");
+ 		if (IS_ERR(msm_port->pclk))
+ 			return PTR_ERR(msm_port->pclk);
++
++		clk_set_rate(msm_port->clk, 1843200);
+ 	}
+ 
+ 	port->uartclk = clk_get_rate(msm_port->clk);

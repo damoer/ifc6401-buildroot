@@ -1,0 +1,125 @@
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 2 Mar 2016 17:07:38 +0100
+Subject: [PATCH] ARM: i.MX: karo-tx6: Support eMMC board variants
+
+The TX6 board come with either NAND flash or eMMC as primary
+storage medium. This adds support for the eMMC variants.
+We can detect if we have NAND or eMMC by looking at the
+bootsource which will be configured accordingly. This
+way we can modify the device tree during runtime and do
+not have to create a new image.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ arch/arm/boards/karo-tx6x/board.c | 26 +++++++++++++++++++++++++-
+ arch/arm/dts/imx6qdl-tx6x.dtsi    | 31 +++++++++++++++++++++++++++++++
+ 2 files changed, 56 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boards/karo-tx6x/board.c b/arch/arm/boards/karo-tx6x/board.c
+index a921541bfc7f..346c4b9aa624 100644
+--- a/arch/arm/boards/karo-tx6x/board.c
++++ b/arch/arm/boards/karo-tx6x/board.c
+@@ -183,8 +183,13 @@ static void eth_init(void)
+ 	writel(val, iomux + IOMUXC_GPR1);
+ }
+ 
++#define IMX6_SRC_SBMR1   0x04
++
+ static int tx6x_devices_init(void)
+ {
++	void __iomem *src_base = IOMEM(MX6_SRC_BASE_ADDR);
++	uint32_t sbmr1;
++
+ 	if (!of_machine_is_compatible("karo,imx6dl-tx6dl") &&
+ 	    !of_machine_is_compatible("karo,imx6q-tx6q"))
+ 		return 0;
+@@ -195,7 +200,26 @@ static int tx6x_devices_init(void)
+ 
+ 	setup_pmic_voltages();
+ 
+-	imx6_bbu_nand_register_handler("nand", BBU_HANDLER_FLAG_DEFAULT);
++	sbmr1 = readl(src_base + IMX6_SRC_SBMR1);
++
++	/*
++	 * Check if this board is booted from eMMC or NAND to enable the
++	 * corresponding device. We can't use the regular bootsource
++	 * function here as it might return that we are in serial
++	 * downloader mode. Even if we are SBMR1[7] indicates whether
++	 * this board has eMMC or NAND.
++	 */
++	if (sbmr1 & (1 << 7)) {
++		imx6_bbu_nand_register_handler("nand", BBU_HANDLER_FLAG_DEFAULT);
++		of_device_enable_and_register_by_name("environment-nand");
++		of_device_enable_and_register_by_name("gpmi-nand@00112000");
++	} else {
++		imx6_bbu_internal_mmc_register_handler("eMMC", "/dev/mmc3.boot0",
++						       BBU_HANDLER_FLAG_DEFAULT);
++		of_device_enable_and_register_by_name("environment-emmc");
++		of_device_enable_and_register_by_name("usdhc@0219c000");
++	}
++
+ 
+ 	return 0;
+ }
+diff --git a/arch/arm/dts/imx6qdl-tx6x.dtsi b/arch/arm/dts/imx6qdl-tx6x.dtsi
+index 7584e4390c8b..9fe6e6a6d7e4 100644
+--- a/arch/arm/dts/imx6qdl-tx6x.dtsi
++++ b/arch/arm/dts/imx6qdl-tx6x.dtsi
+@@ -3,9 +3,16 @@
+ 		linux,stdout-path = &uart1;
+ 
+ 		environment-nand {
++			status = "disabled";
+ 			compatible = "barebox,environment";
+ 			device-path = &gpmi, "partname:barebox-environment";
+ 		};
++
++		environment-emmc {
++			status = "disabled";
++			compatible = "barebox,environment";
++			device-path = &usdhc4, "partname:boot1";
++		};
+ 	};
+ };
+ 
+@@ -14,6 +21,8 @@
+ };
+ 
+ &gpmi {
++	status = "disabled";
++
+ 	partition@0 {
+ 		label = "barebox";
+ 		reg = <0x0 0x400000>;
+@@ -51,9 +60,31 @@
+ 				MX6QDL_PAD_GPIO_16__ENET_REF_CLK	0x4001b0b0
+ 			>;
+ 		};
++
++		pinctrl_usdhc4: usdhc4grp {
++			fsl,pins = <
++				MX6QDL_PAD_SD4_CMD__SD4_CMD		0x070b1
++				MX6QDL_PAD_SD4_CLK__SD4_CLK		0x070b1
++				MX6QDL_PAD_SD4_DAT0__SD4_DATA0		0x070b1
++				MX6QDL_PAD_SD4_DAT1__SD4_DATA1		0x070b1
++				MX6QDL_PAD_SD4_DAT2__SD4_DATA2		0x070b1
++				MX6QDL_PAD_SD4_DAT3__SD4_DATA3		0x070b1
++				MX6QDL_PAD_NANDF_ALE__SD4_RESET		0x0b0b1
++			>;
++		};
+ 	};
+ };
+ 
+ &ocotp {
+ 	barebox,provide-mac-address = <&fec 0x620>;
+ };
++
++&usdhc4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc4>;
++	bus-width = <4>;
++	non-removable;
++	no-1-8-v;
++	fsl,wp-controller;
++	status = "disabled";
++};

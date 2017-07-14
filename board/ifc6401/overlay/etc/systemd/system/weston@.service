@@ -1,0 +1,41 @@
+[Unit]
+Description=Wayland compositor Weston on tty%I
+Documentation=man:weston(1) man:weston.ini(5)
+Documentation=http://wayland.freedesktop.org/
+After=systemd-user-sessions.service plymouth-quit-wait.service
+
+# Make sure we launch before graphical.target is up.
+Before=graphical.target
+
+# On systems without virtual consoles, do not start.
+ConditionPathExists=/dev/tty0
+
+[Service]
+ExecStart=/usr/bin/weston
+PermissionsStartOnly=true
+UtmpIdentifier=tty%I
+TTYPath=/dev/tty%I
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+# run as pre-configured user
+User=default
+WorkingDirectory=/home/default
+
+# switch to correct tty
+ExecStartPre=/usr/bin/chvt %I
+
+# fail start, if not controlling the tty
+StandardInput=tty-fail
+StandardOutput=tty
+
+# connect stderr to journal
+StandardError=journal
+
+# Want PAM session for the user, similar to login
+PAMName=login
+
+[Install]
+WantedBy=graphical.target
+DefaultInstance=9

@@ -1,0 +1,17 @@
+diff --git a/drivers/usb/chipidea/udc.c b/drivers/usb/chipidea/udc.c
+index 661f43f..db5b158 100644
+--- a/drivers/usb/chipidea/udc.c
++++ b/drivers/usb/chipidea/udc.c
+@@ -1924,6 +1924,12 @@ static int udc_start(struct ci_hdrc *ci)
+ 
+ 	ci->gadget.ep0 = &ci->ep0in->ep;
+ 
++	if (ci->usb_phy) {
++		retval = otg_set_peripheral(ci->usb_phy->otg, &ci->gadget);
++		if (retval)
++			goto destroy_eps;
++	}
++
+ 	retval = usb_add_gadget_udc(dev, &ci->gadget);
+ 	if (retval)
+ 		goto destroy_eps;

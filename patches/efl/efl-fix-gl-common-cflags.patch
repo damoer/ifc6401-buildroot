@@ -1,0 +1,13 @@
+--- efl-1.15.2/configure.ac.orig	2015-11-11 10:39:41.757939019 +0100
++++ efl-1.15.2/configure.ac	2015-11-11 10:48:45.588326170 +0100
+@@ -1970,7 +1970,9 @@
+ # OpenGL common
+ evas_engine_gl_common_cflags=""
+ if test "x${have_egl}" = "xyes"; then
+-   evas_engine_gl_common_libs="-lEGL"
++   PKG_CHECK_MODULES([EGL], [egl])
++   evas_engine_gl_common_libs="$EGL_LIBS"
++   evas_engine_gl_common_cflags="$EGL_CFLAGS"
+ else
+    evas_engine_gl_common_libs="-lGL"
+ fi

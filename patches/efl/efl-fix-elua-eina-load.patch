@@ -1,0 +1,11 @@
+--- host-efl-1.17.2/src/Makefile_Elua_Helper.am.orig	2017-04-27 10:20:32.540289799 +0200
++++ host-efl-1.17.2/src/Makefile_Elua_Helper.am	2017-04-27 10:21:05.228289985 +0200
+@@ -2,7 +2,7 @@
+ ELUA_GEN = @elua_bin@ lualian
+ _ELUA_GEN_DEP = @elua_bin@
+ else
+-ELUA_GEN = ELUA_EOLIAN_LIBRARY_PATH=$(top_builddir)/src/lib/eolian/.libs \
++ELUA_GEN = ELUA_EINA_LIBRARY_PATH=$(top_builddir)/src/lib/eina/.libs ELUA_EOLIAN_LIBRARY_PATH=$(top_builddir)/src/lib/eolian/.libs \
+ 	$(top_builddir)/src/bin/elua/elua${EXEEXT} \
+ 	-I$(ELUA_BINDINGS_DIR) -C$(ELUA_CORE_DIR) -M$(ELUA_MODULES_DIR) \
+ 	-A$(ELUA_APPS_DIR) lualian

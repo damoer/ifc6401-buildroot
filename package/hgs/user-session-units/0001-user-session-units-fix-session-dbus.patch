@@ -1,0 +1,18 @@
+--- user-session-units-v9/units/user/dbus.socket.in.orig	2016-06-03 08:15:20.458190588 +0200
++++ user-session-units-v9/units/user/dbus.socket.in	2016-06-03 08:18:32.298191350 +0200
+@@ -2,4 +2,4 @@
+ Description=D-Bus System Message Bus Socket
+ 
+ [Socket]
+-ListenStream=%t/dbus/user_bus_socket
++ListenStream=%t/bus
+--- user-session-units-v9/units/user/dbus.service.in.orig	2016-06-03 08:14:54.746190486 +0200
++++ user-session-units-v9/units/user/dbus.service.in	2016-06-03 08:15:04.674190526 +0200
+@@ -4,6 +4,6 @@
+ Requires=dbus.socket
+ 
+ [Service]
+-ExecStart=@DBUSDAEMONDIR@/dbus-daemon --session --address=systemd: --nofork --systemd-activation
++ExecStart=@DBUSPREFIX@/bin/dbus-daemon --session --address=systemd: --nofork --systemd-activation
+ ExecReload=@DBUSPREFIX@/bin/dbus-send --print-reply --session --type=method_call --dest=org.freedesktop.DBus / org.freedesktop.DBus.ReloadConfig
+ 

@@ -1,0 +1,72 @@
+#!/usr/bin/luajit
+
+--[[
+Simple lpinfo -l -v wrapper which transforms the lpinfo output into a easy to parse csv format
+--]]
+
+local uri, class, info, mam, did, location, name, language
+
+function nonil(val)
+	if val == nil then
+		return ""
+	else
+		return val
+	end
+end
+
+local separator
+local printfn
+
+if arg[1] == '-v' then
+	print("uri,class,info,make-and-model,device-id,location")
+	printfn = function() io.write(string.format("%s,%s,%s,%s,%s,%s\n", nonil(uri), nonil(class), nonil(info), nonil(mam), nonil(did), nonil(location))) end
+	separator = '^Device:'
+elseif arg[1] == '-m' then
+	print("name,natural_language,make-and-model,device-id")
+	printfn = function() io.write(string.format("%s,%s,%s,%s\n", nonil(name), nonil(language), nonil(mam), nonil(did))) end
+	separator = '^Model:'
+else
+	os.exit(2)
+end
+
+for line in io.popen("/usr/sbin/lpinfo -l " .. arg[1]):lines() do
+	local key, val = string.match(line, '([^ ]+) = (.+)$')
+
+	if key ~= nil and val ~= nil then
+		if string.match(line, separator) then
+			if (uri ~= nil and string.find(uri, ":")) or (name ~= nil and string.find(name, ":")) then
+				printfn()
+				uri = nil
+				class = nil
+				info = nil
+				mam = nil
+				did = nil
+				location = nil
+				name = nil
+				language = nil
+			end
+		end
+
+		if key == "uri" then
+			uri = val
+		elseif key == "class" then
+			class = val
+		elseif key == "info" then
+			info = val
+		elseif key == "make-and-model" then
+			mam = val
+		elseif key == "device-id" then
+			did = val
+		elseif key == "location" then
+			location = val
+		elseif key == "name" then
+			name = val
+		elseif key == "natural_language" then
+			language = val
+		end
+	end
+end
+
+if (uri ~= nil and string.find(uri, ":")) or (name ~= nil and string.find(name, ":")) then
+	printfn()
+end

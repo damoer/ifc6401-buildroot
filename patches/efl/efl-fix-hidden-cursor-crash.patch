@@ -1,0 +1,11 @@
+--- efl-1.18.4/src/lib/ecore_wl2/ecore_wl2_input.c.orig	2017-04-28 12:58:01.872835157 +0200
++++ efl-1.18.4/src/lib/ecore_wl2/ecore_wl2_input.c	2017-04-28 12:58:43.480835393 +0200
+@@ -1250,6 +1250,8 @@
+    input = data;
+    if (!input) return EINA_FALSE;
+ 
++   if (!input->cursor.surface) return EINA_FALSE;
++
+    image = input->cursor.wl_cursor->images[input->cursor.index];
+    if (!image) return EINA_FALSE;
+ 

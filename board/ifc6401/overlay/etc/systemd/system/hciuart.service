@@ -1,0 +1,13 @@
+[Unit]
+Description=Configure Bluetooth Modems connected by UART
+Before=bluetooth.service connman.service
+After=dev-ttyMSM1.device
+
+[Service]
+Type=forking
+Restart=on-failure
+ExecStartPre=/sbin/rfkill unblock bluetooth
+ExecStart=/bin/sh -c "exec /bin/hciattach -s $(/bin/stty -F /dev/ttyMSM1 speed) /dev/ttyMSM1 ath3k 4000000 flow"
+
+[Install]
+WantedBy=multi-user.target

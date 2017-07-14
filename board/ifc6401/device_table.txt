@@ -1,0 +1,16 @@
+# See package/makedevs/README for details
+#
+# This device table is used to assign proper ownership and permissions
+# on various files. It doesn't create any device file, as it is used
+# in both static device configurations (where /dev/ is static) and in
+# dynamic configurations (where devtmpfs, mdev or udev are used).
+#
+# <name>				<type>	<mode>	<uid>	<gid>	<major>	<minor>	<start>	<inc>	<count>
+/usr/lib/suwraps			d	700	0	0	-	-	-	-	-
+/media/A				d	755	0	0	-	-	-	-	-
+/media/B				d	755	1000	1000	-	-	-	-	-
+/media/boot				d	755	0	0	-	-	-	-	-
+/media/factory				d	755	0	0	-	-	-	-	-
+/media/usb				d	755	1000	1000	-	-	-	-	-
+/persist				d	755	0	0	-	-	-	-	-
+/data					d	755	1000	1000	-	-	-	-	-

@@ -20,7 +20,9 @@ EFL_LICENSE_FILES = \
 EFL_INSTALL_STAGING = YES
 
 EFL_DEPENDENCIES = host-pkgconf host-efl host-luajit dbus freetype \
-	jpeg luajit lz4 udev util-linux zlib
+	jpeg luajit lz4 zlib
+
+EFL_MAKE_ENV = LD_LIBRARY_PATH=$(HOST_DIR)/usr/lib
 
 # Configure options:
 # --disable-lua-old: build elua for the target.
