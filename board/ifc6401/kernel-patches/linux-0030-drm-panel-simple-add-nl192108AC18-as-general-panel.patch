@@ -1,0 +1,43 @@
+--- linux-4.10-rc7/drivers/gpu/drm/panel/panel-simple.c	2017-02-06 00:10:58.000000000 +0100
++++ linux-4.10-rc7.mod/drivers/gpu/drm/panel/panel-simple.c	2017-02-13 11:58:15.419000707 +0100
+@@ -1164,6 +1174,30 @@
+ 	.bus_flags = DRM_BUS_FLAG_PIXDATA_POSEDGE,
+ };
+ 
++static const struct drm_display_mode nlt_192108AC18_mode = {
++	.clock = 74175 * 2,
++	.hdisplay = 960 * 2,
++	.hsync_start = (960 + 48) * 2,
++	.hsync_end = (960 + 48 + 44) * 2,
++	.htotal = (960 + 48 + 44 + 48) * 2,
++	.vdisplay = 1080,
++	.vsync_start = 1080 + 15,
++	.vsync_end = 1080 + 15 + 15,
++	.vtotal = 1080 + 15 + 15 + 15,
++	.vrefresh = 60,
++};
++
++static const struct panel_desc nlt_192108AC18_desc = {
++	.modes = &nlt_192108AC18_mode,
++	.num_modes = 1,
++	.bpc = 8,
++	.size = {
++		.width = 344,
++		.height = 193,
++	},
++};
++
++
+ static const struct display_timing okaya_rs800480t_7x0gp_timing = {
+ 	.pixelclock = { 30000000, 30000000, 40000000 },
+ 	.hactive = { 800, 800, 800 },
+@@ -1653,6 +1687,9 @@
+ 		.compatible = "nec,nl4827hc19-05b",
+ 		.data = &nec_nl4827hc19_05b,
+ 	}, {
++		.compatible = "nlt,192108AC18",
++		.data = &nlt_192108AC18_desc,
++	}, {
+ 		.compatible = "okaya,rs800480t-7x0gp",
+ 		.data = &okaya_rs800480t_7x0gp,
+ 	}, {

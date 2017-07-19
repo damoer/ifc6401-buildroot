@@ -1,0 +1,4 @@
+config BR2_PACKAGE_EGALAX_I2C
+	bool "egalax_i2c"
+	help
+		the egalax_i2c kernel module

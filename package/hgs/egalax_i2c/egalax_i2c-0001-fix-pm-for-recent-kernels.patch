@@ -1,0 +1,63 @@
+--- egalax_i2c-20150423/egalax_i2c.c.orig	2016-07-25 14:13:40.520114970 +0200
++++ egalax_i2c-20150423/egalax_i2c.c	2016-07-25 14:21:05.464116737 +0200
+@@ -703,7 +703,7 @@
+ 	EGALAX_DBG(DBG_POINT, " Sent up point data done!\n");
+ }
+ 
+-static int egalax_i2c_pm_suspend(struct i2c_client *client, pm_message_t mesg)
++static int egalax_i2c_pm_suspend(struct device *dev)
+ {
+ 	unsigned char cmdbuf[4];
+ 	struct i2c_msg xfer;
+@@ -741,7 +741,7 @@
+ 	return -1;
+ }
+ 
+-static int egalax_i2c_pm_resume(struct i2c_client *client)
++static int egalax_i2c_pm_resume(struct device *dev)
+ {
+ 	EGALAX_DBG(DBG_SUSP, " Enter early_resume state:%d\n", p_egalax_i2c_dev->work_state);
+ 
+@@ -847,7 +847,7 @@
+ 
+ 	p_egalax_i2c_dev->work_state = MODE_WORKING;
+ 
+-	ret = request_irq(client->irq, egalax_i2c_interrupt, IRQF_DISABLED | IRQF_TRIGGER_LOW, client->name, p_egalax_i2c_dev);
++	ret = request_irq(client->irq, egalax_i2c_interrupt, IRQF_TRIGGER_LOW, client->name, p_egalax_i2c_dev);
+ 	if( ret ) 
+ 	{
+ 		EGALAX_DBG(DBG_MODULE, " Request irq(%d) failed\n", client->irq);
+@@ -933,6 +933,15 @@
+ 
+ MODULE_DEVICE_TABLE(i2c, egalax_i2c_idtable);
+ 
++#ifdef CONFIG_PM
++static const struct dev_pm_ops egalax_i2c_pm_ops = {
++#ifndef CONFIG_HAS_EARLYSUSPEND
++	.suspend 	= egalax_i2c_pm_suspend,
++	.resume 	= egalax_i2c_pm_resume,
++#endif
++};
++#endif
++
+ static struct i2c_driver egalax_i2c_driver = {
+ 	.driver = {
+ 		.name 	= "egalax_i2c",
+@@ -940,14 +949,13 @@
+ 	#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0)
+ 		.of_match_table = egalax_i2c_dt_ids,
+ 	#endif
++#ifdef CONFIG_PM
++		.pm     = &egalax_i2c_pm_ops,
++#endif
+ 	},
+ 	.id_table	= egalax_i2c_idtable,
+ 	.probe		= egalax_i2c_probe,
+ 	.remove		= __devexit_p(egalax_i2c_remove),
+-#ifndef CONFIG_HAS_EARLYSUSPEND
+-	.suspend 	= egalax_i2c_pm_suspend,
+-	.resume 	= egalax_i2c_pm_resume,
+-#endif
+ };
+ 
+ static const struct file_operations egalax_cdev_fops = {
