@@ -1,0 +1,81 @@
+config BR2_PACKAGE_WPEFRAMEWORK
+	bool "wpeframework"
+	help
+	   Base WPE Framework	  
+	   
+
+if BR2_PACKAGE_WPEFRAMEWORK
+
+menu "Options"
+
+config BR2_PACKAGE_WPEFRAMEWORK_PORT
+	string "port"
+	default "80"
+
+config BR2_PACKAGE_WPEFRAMEWORK_BIND
+	string "bind"
+	default "0.0.0.0"
+
+config BR2_PACKAGE_WPEFRAMEWORK_INTERFACE
+	string "interface"
+	default ""
+
+config BR2_PACKAGE_WPEFRAMEWORK_IDLE_TIME
+	string "idle-time"
+	default "180"
+
+config BR2_PACKAGE_WPEFRAMEWORK_PERSISTENT_PATH
+	string "persistent path"
+	default "/root"
+
+config BR2_PACKAGE_WPEFRAMEWORK_DATA_PATH
+	string "data path"
+	default "/usr/share/WPEFramework"
+
+config BR2_PACKAGE_WPEFRAMEWORK_SYSTEM_PATH
+	string "system path"
+	default "/usr/lib/WPEFramework"
+
+config BR2_PACKAGE_WPEFRAMEWORK_PROXYSTUB_PATH
+	string "proxystub path"
+	default "/usr/lib/WPEFramework/proxystubs"
+
+config BR2_PACKAGE_WPEFRAMEWORK_NO_WEBUI
+	bool "no web interface"
+
+config BR2_PACKAGE_WPEFRAMEWORK_OOM_ADJUST
+	string "oom-adjust"
+	default ""
+
+source "package/wpe/wpeframework-devtools/Config.in"
+
+endmenu
+
+menu "Extensions"
+
+config BR2_PACKAGE_WPEFRAMEWORK_VIRTUALINPUT
+	bool "VirtualInput"
+	help
+	   If the dynamic uinput system can not be used for security reasons, this
+           allows for relaying keys to plugins
+          
+config BR2_PACKAGE_WPEFRAMEWORK_PROVISIONPROXY
+	bool "ProvisionProxy"
+        select BR2_PACKAGE_LIBPROVISION
+	help
+	   Allows provisioning of modules from the cloud.
+          
+endmenu
+
+menu "Plugins"
+
+source "package/wpe/wpeframework-common/Config.in"
+source "package/wpe/wpeframework-compositor/Config.in"
+source "package/wpe/wpeframework-dialserver/Config.in"
+source "package/wpe/wpeframework-netflix/Config.in"
+source "package/wpe/wpeframework-provisioning/Config.in"
+source "package/wpe/wpeframework-switchboard/Config.in"
+source "package/wpe/wpeframework-poc/Config.in"
+endmenu
+
+endif

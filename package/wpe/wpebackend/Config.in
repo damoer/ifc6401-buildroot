@@ -1,0 +1,4 @@
+config BR2_PACKAGE_WPEBACKEND
+	bool "wpebackend"
+	help
+	  Base library for the WPE port of WebKit.

@@ -1,0 +1,158 @@
+config BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool
+
+config BR2_PACKAGE_WPEFRAMEWORK_COMMANDER
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "Commander"
+	help
+	   Commander Plugin
+
+menuconfig BR2_PACKAGE_WPEFRAMEWORK_DEVICEINFO
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "DeviceInfo"
+	help
+	   DeviceInfo Plugin
+
+menuconfig BR2_PACKAGE_WPEFRAMEWORK_LOCATIONSYNC
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "LocationSync"
+	help
+	   LocationSync Plugin
+	   WPE Platform Dictionary plugin
+	   
+if BR2_PACKAGE_WPEFRAMEWORK_LOCATIONSYNC
+config BR2_PACKAGE_WPEFRAMEWORK_LOCATIONSYNC_URI
+	string "location URI"
+	default "location.webplatformforembedded.org"
+endif	   
+
+config BR2_PACKAGE_WPEFRAMEWORK_MONITOR
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+        bool "Monitor"
+        help
+           Monitor Plugin
+
+config BR2_PACKAGE_WPEFRAMEWORK_TIMESYNC
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "TimeSync"
+	help
+	   TimeSync Plugin
+
+menuconfig BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "RemoteControl"
+	help
+	   RemoteControl Plugin
+
+if BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL
+
+config BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL_IR
+    bool "IR (Infrared)"
+    help
+       Select devices which are based on Infrared (IR) technology
+
+config BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL_IRNEXUS
+    bool "BCM Nexus IR Remote Control Unit"
+    default false
+    depends on BR2_PACKAGE_BCM_REFSW && BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL_IR
+    help
+       Enable the Nexus IR remote input
+
+config BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL_IRNEXUS_MODE
+    string "IR mode"
+    default "16"
+    depends on BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL_IRNEXUS
+    help
+       Sets the IR Mode to be used with IR Nexus. Every remote has a different mode and key mapping.
+
+config BR2_PACKAGE_WPEFRAMEWORK_REMOTECONTROL_RF
+    bool "RF (Radio Frequency)"
+    help
+       Select devices which are based on Radio Frequency (RF) technology
+
+endif
+
+config BR2_PACKAGE_WPEFRAMEWORK_SNAPSHOT
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "Snapshot"
+	help
+	   Snapshot Plugin
+
+config BR2_PACKAGE_WPEFRAMEWORK_TRACECONTROL
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "TraceControl"
+	help
+	   TraceControl Plugin
+
+menuconfig BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "WebKitBrowser"
+	depends on BR2_PACKAGE_WPEWEBKIT
+	help
+	   WebKitBrowser Plugin
+
+if BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_AUTOSTART
+    bool "autostart"
+    default y
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_STARTURL
+    string "start-url"
+    default "about:blank"
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_USERAGENT
+    string "useragent"
+    default "Mozilla/5.0 (Macintosh, Intel Mac OS X 10_11_4) AppleWebKit/602.1.28+ (KHTML, like Gecko) Version/9.1 Safari/601.5.17"
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_MEMORYPROFILE
+    string "memory-profile"
+    default "128m"
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_MEMORYPRESSURE
+    string "memory-pressure"
+    default "databaseprocess:50m,networkprocess:100m,webprocess:300m,rpcprocess:50m"
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_MEDIADISKCACHE
+    bool "media-disk-cache"
+    default n
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_DISKCACHE
+    string "disk-cache"
+    default "0"
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_XHRCACHE
+    bool "xhr-cache"
+    default false
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBKITBROWSER_TRANSPARENT
+    bool "transparent"
+    default false
+
+config BR2_PACKAGE_WPEFRAMEWORK_YOUTUBE
+    bool "youtube"
+    help
+      A wrapper around the youtube app to start it as a
+      wpeframework plugin.
+
+endif
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBPROXY
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "WebProxy"
+	help
+	   WebProxy Plugin
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBSERVER
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+        bool "WebServer"
+        help
+           WebServer Plugin
+
+
+config BR2_PACKAGE_WPEFRAMEWORK_WEBSHELL
+        select BR2_PACKAGE_WPEFRAMEWORK_COMMON
+	bool "WebShell"
+	help
+	   WebShell Plugin
+
