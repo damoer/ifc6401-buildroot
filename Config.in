@@ -734,6 +734,9 @@ menu "hgs"
 
 endmenu
 
+menu "Igalia"
+	source "package/Igalia/chromium/Config.in"
+endmenu
 
 source "toolchain/Config.in"
 
