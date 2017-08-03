@@ -4,8 +4,8 @@
 #
 ################################################################################
 
-WPEWEBKIT_VERSION = 4ff934a322a46bf9b42284467735ebf9e588ba29
-WPEWEBKIT_SITE = $(call github,WebPlatformForEmbedded,WPEWebKit,$(WPEWEBKIT_VERSION))
+WPEWEBKIT_VERSION = 530485e91bc89e8ecb54c07b55e466c9e0c84721
+WPEWEBKIT_SITE = $(call github,WebKit,webkit,$(WPEWEBKIT_VERSION))
 
 WPEWEBKIT_INSTALL_STAGING = YES
 
@@ -24,7 +24,7 @@ WPEWEBKIT_DEPENDENCIES = host-bison host-cmake host-flex host-gperf host-ruby ic
 
 ifeq ($(WPEWEBKIT_BUILD_WEBKIT),y)
 WPEWEBKIT_DEPENDENCIES += wpebackend libgcrypt libgles libegl cairo freetype fontconfig \
-	harfbuzz libxml2 libxslt sqlite libsoup jpeg libpng
+	harfbuzz libxml2 libxslt sqlite libsoup jpeg libpng libepoxy
 endif
 
 WPEWEBKIT_EXTRA_FLAGS = -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -194,6 +194,8 @@ WPEWEBKIT_EXTRA_FLAGS += \
 	-DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUG -Wno-cast-align" \
 	-DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG -Wno-cast-align"
 endif
+
+WPEWEBKIT_EXTRA_FLAGS += -DCMAKE_CXX_FLAGS="-DMESA_EGL_NO_X11_HEADERS"
 
 WPEWEBKIT_CONF_OPTS = \
 	-DPORT=$(WPEWEBKIT_USE_PORT) \
