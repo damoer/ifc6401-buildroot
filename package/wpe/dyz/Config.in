@@ -1,0 +1,8 @@
+config BR2_PACKAGE_DYZ
+	bool "dyz"
+	select BR2_PACKAGE_LUAJIT
+	depends on BR2_PACKAGE_WPEWEBKIT
+	help
+	  dyz is just a simple launcher for WPE port of WebKit.
+
+	  https://github.com/Igalia/dyz
