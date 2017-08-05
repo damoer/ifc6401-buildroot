@@ -95,4 +95,26 @@ define CHROMIUM_BUILD_CMDS
         cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) ninja -C out/$(CHROMIUM_BUILD_TYPE) chrome chrome_sandbox mash:all
 endef
 
+define CHROMIUM_INSTALL_TARGET_CMDS
+        mkdir -p $(TARGET_DIR)/usr/lib/chromium/ && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome $(TARGET_DIR)/usr/lib/chromium/chromium && \
+        chmod 755 $(TARGET_DIR)/usr/lib/chromium/chromium && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome_sandbox $(TARGET_DIR)/usr/lib/chromium/chrome-sandbox && \
+        chmod 4755 $(TARGET_DIR)/usr/lib/chromium/chrome-sandbox && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome $(TARGET_DIR)/usr/lib/chromium/chromedriver && \
+        chmod 755 $(TARGET_DIR)/usr/lib/chromium/chromedriver && \
+        ln -svf $(TARGET_DIR)/usr/lib/chromium/chromium $(TARGET_DIR)/usr/bin && \
+        ln -svf $(TARGET_DIR)/usr/lib/chromium/chromedriver $(TARGET_DIR)/usr/bin/ && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/icudtl.dat $(TARGET_DIR)/usr/lib/chromium/ && \
+        chmod 644 $(TARGET_DIR)/usr/lib/chromium/icudtl.dat && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/gen/content/content_resources.pak $(TARGET_DIR)/usr/lib/chromium/ && \
+        chmod 644 $(TARGET_DIR)/usr/lib/chromium/content_resources.pak && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/*.pak $(TARGET_DIR)/usr/lib/chromium/ && \
+        chmod 644 $(TARGET_DIR)/usr/lib/chromium/*.pak && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/locales $(TARGET_DIR)/usr/lib/chromium/ && \
+        mkdir -p $(TARGET_DIR)/usr/share/man/man1/ && \
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome.1 $(TARGET_DIR)/usr/share/man/man1/chromium.1 && \
+        chmod 644 $(TARGET_DIR)/usr/share/man/man1/chromium.1
+endef
+
 $(eval $(generic-package))
