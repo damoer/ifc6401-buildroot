@@ -111,10 +111,7 @@ define CHROMIUM_INSTALL_TARGET_CMDS
         chmod 644 $(TARGET_DIR)/usr/lib/chromium/content_resources.pak && \
         cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/*.pak $(TARGET_DIR)/usr/lib/chromium/ && \
         chmod 644 $(TARGET_DIR)/usr/lib/chromium/*.pak && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/locales $(TARGET_DIR)/usr/lib/chromium/ && \
-        mkdir -p $(TARGET_DIR)/usr/share/man/man1/ && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome.1 $(TARGET_DIR)/usr/share/man/man1/chromium.1 && \
-        chmod 644 $(TARGET_DIR)/usr/share/man/man1/chromium.1
+        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/locales $(TARGET_DIR)/usr/lib/chromium/
 endef
 
 $(eval $(generic-package))
