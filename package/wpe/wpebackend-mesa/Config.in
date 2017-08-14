@@ -1,0 +1,4 @@
+config BR2_PACKAGE_WPEBACKEND_MESA
+	bool "wpebackend-mesa"
+	help
+	  Mesa backend for WPE WebKit
