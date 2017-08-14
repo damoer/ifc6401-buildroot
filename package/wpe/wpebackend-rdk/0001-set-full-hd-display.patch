@@ -1,0 +1,15 @@
+Index: WPEBackend-rdk-91634ad8277d6228f5c82676292bddad78b0c110/src/wayland-egl/view-backend.cpp
+===================================================================
+--- WPEBackend-rdk-91634ad8277d6228f5c82676292bddad78b0c110.orig/src/wayland-egl/view-backend.cpp
++++ WPEBackend-rdk-91634ad8277d6228f5c82676292bddad78b0c110/src/wayland-egl/view-backend.cpp
+@@ -32,8 +32,8 @@
+ #include "ipc.h"
+ #include "ipc-waylandegl.h"
+ 
+-#define WIDTH 1280
+-#define HEIGHT 720
++#define WIDTH 1920
++#define HEIGHT 1080
+ 
+ namespace WaylandEGL {
+ 
