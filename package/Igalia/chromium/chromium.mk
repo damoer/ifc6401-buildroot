@@ -2,69 +2,124 @@ CHROMIUM_VERSION = ac0ab56
 CHROMIUM_SOURCE = chromium-wayland-$(CHROMIUM_VERSION).tar.xz
 CHROMIUM_SITE = https://tmp.igalia.com/chromium-tarballs
 
-CHROMIUM_DEPENDENCIES = host-ninja host-depottools libnss dbus wayland libegl \
-			libglib2 freetype alsa-lib pciutils fontconfig pulseaudio
+CHROMIUM_DEPENDENCIES = host-gn host-ninja libnss dbus wayland libegl \
+                        libglib2 freetype alsa-lib pciutils fontconfig \
+                        pulseaudio
 
-CHROMIUM_BUILD_TYPE = 'Release'
+# TODO: arm_tune="cortex-a15"
+# TODO: arm_use_neon="..."
+# TODO: arm_fpu="vfpv4"
+# TODO: arm_optionally_use_neon=true
+# TODO: use_jumbo_build=true
+# TODO: v8_use_snapshot=true
 
-GN_CONFIG_COMMON = \
-	gold_path="" \
-	enable_nacl=false \
-	is_clang=false \
-	fatal_linker_warnings=false \
-	v8_use_external_startup_data=false \
-	linux_use_bundled_binutils=false \
-	use_gold=true \
-	is_component_build=false \
-	proprietary_codecs=false \
-	use_ozone=true \
-	ozone_auto_platforms=false \
-	ozone_platform_headless=true \
-	enable_package_mash_services=true \
-	ozone_platform_wayland=true \
-	ozone_platform_x11=false \
-	ozone_platform="wayland" \
-	v8_use_snapshot=false \
-	use_kerberos=false \
-	use_cups=false \
-	use_gnome_keyring=false \
-	treat_warnings_as_errors=false \
-	target_os="linux" \
-	is_official_build=true \
-	use_sysroot=false \
-	is_debug=false
+GN_CONFIG = clang_use_chrome_plugins=false \
+            enable_nacl=false \
+            enable_package_mash_services=true \
+            fatal_linker_warnings=false \
+            gold_path="" \
+            is_clang=false \
+            is_component_build=false \
+            linux_use_bundled_binutils=false \
+            ozone_auto_platforms=false \
+            ozone_platform="wayland" \
+            ozone_platform_headless=true \
+            ozone_platform_wayland=true \
+            ozone_platform_x11=false \
+            proprietary_codecs=false \
+            target_cpu=$(BR2_PACKAGE_CHROMIUM_TARGET_CPU) \
+            target_os="linux" \
+            target_sysroot="$(STAGING_DIR)" \
+            treat_warnings_as_errors=false \
+            use_cups=false \
+            use_custom_libcxx=false \
+            use_debug_fission=false \
+            use_gnome_keyring=false \
+            use_gold=false \
+            use_kerberos=false \
+            use_ozone=true \
+            v8_target_cpu=$(BR2_PACKAGE_CHROMIUM_TARGET_CPU) \
+            v8_use_external_startup_data=false \
+            v8_use_snapshot=false
 
-GN_CONFIG_CROSS = $(GN_CONFIG_COMMON) \
-	target_cpu=$(BR2_ARCH) \
-	host_toolchain="//build/toolchain/cros:host" \
-	custom_toolchain="//build/toolchain/cros:target" \
-	v8_snapshot_toolchain="//build/toolchain/cros:v8_snapshot" \
-	cros_host_is_clang=false \
-	cros_target_ar="$(TARGET_AR)" \
-	cros_target_cc="$(TARGET_CC)" \
-	cros_target_cxx="$(TARGET_CXX)" \
-	cros_target_ld="$(TARGET_CXX)" \
-	cros_target_extra_cflags="$(TARGET_CFLAGS)" \
-	cros_target_extra_ldflags="$(TARGET_LDFLAGS)" \
-	cros_target_extra_cxxflags="$(TARGET_CXXFLAGS)" \
-	cros_target_extra_cppflags="$(TARGET_CPPFLAGS)" \
-	cros_v8_snapshot_ar="$(HOSTAR)" \
-	cros_v8_snapshot_cc="$(HOSTCPP)" \
-	cros_v8_snapshot_cxx="$(HOSTCXX)" \
-	cros_v8_snapshot_ld="$(HOSTCXX)" \
-	cros_v8_snapshot_extra_cflags="$(TARGET_CFLAGS)" \
-	cros_v8_snapshot_extra_cxxflags="$(TARGET_CXXFLAGS)" \
-	cros_v8_snapshot_extra_cppflags="$(TARGET_CPPFLAGS)" \
-	cros_v8_snapshot_extra_ldflags="$(TARGET_LDFLAGS)" \
-	cros_host_cc="$(HOSTCC)" \
-	cros_host_cxx="$(HOSTCXX)" \
-	cros_host_ar="$(HOSTAR)" \
-	cros_host_ld="$(HOSTCXX)" \
-	cros_host_extra_cflags="$(HOSTCFLAGS)" \
-	cros_host_extra_cxxflags="$(HOSTCXXFLAGS)" \
-	cros_host_extra_cppflags="$(HOSTCPPFLAGS)" \
-	cros_host_extra_ldflags="$(HOSTLDFLAGS)" \
-	target_sysroot="$(STAGING_DIR)"
+ifeq ($(BR2_USE_CCACHE),y)
+GN_CONFIG += cc_wrapper="$(HOST_DIR)/usr/bin/ccache"
+endif
+
+ifeq ($(BR2_ENABLE_DEBUG),y)
+ifeq ($(BR2_DEBUG_1),y)
+GN_CONFIG += symbol_level=1
+else
+GN_CONFIG += symbol_level=2
+endif
+CHROMIUM_BUILD_TYPE = Debug
+GN_TOOLCHAIN_TARGET_STRIP =
+GN_CONFIG += is_debug=true remove_webcore_debug_symbols=false
+else
+CHROMIUM_BUILD_TYPE = Release
+GN_TOOLCHAIN_TARGET_STRIP = strip = "$(TARGET_STRIP)"
+GN_CONFIG += is_debug=false remove_webcore_debug_symbols=true
+endif
+
+ifneq ($(BR2_ARM_INSTRUCTIONS_THUMB)$(BR2_ARM_INSTRUCTIONS_THUMB2),)
+GN_CONFIG += arm_use_thumb=true
+endif
+
+ifeq ($(BR2_ARM_EABIHF),y)
+GN_CONFIG += arm_float_abi="hard"
+endif
+
+
+define GN_TOOLCHAIN_FILE
+import("//build/toolchain/gcc_toolchain.gni")
+
+gcc_toolchain("default") {
+  cc = "$(TARGET_CC)"
+  cxx = "$(TARGET_CXX)"
+  ar = "$(TARGET_AR)"
+  nm = "$(TARGET_NM)"
+  ld = cxx
+  readelf = "$(TARGET_READELF)"
+  $(GN_TOOLCHAIN_TARGET_STRIP)
+
+  extra_cflags = "$(TARGET_CFLAGS)"
+  extra_cxxflags = "$(TARGET_CXXFLAGS)"
+  extra_cppflags = "$(TARGET_CPPFLAGS)"
+  extra_ldflags = "$(TARGET_LDFLAGS)"
+
+  toolchain_args = {
+    current_cpu = $(BR2_PACKAGE_CHROMIUM_TARGET_CPU)
+    current_os = "linux"
+    is_clang = false
+  }
+}
+
+gcc_toolchain("host") {
+  cc = "$(HOSTCC_NOCCACHE)"
+  cxx = "$(HOSTCXX_NOCCACHE)"
+  ar = "$(HOSTAR)"
+  nm = "$(HOSTNM)"
+  ld = cxx
+
+  extra_cflags = "$(HOSTCFLAGS)"
+  extra_cxxflags = "$(HOSTCXXFLAGS)"
+  extra_cppflags = "$(HOSTCPPFLAGS)"
+  extra_ldflags = "$(HOSTLDFLAGS)"
+
+  toolchain_args = {
+    current_cpu = "x64"
+    current_os = "linux"
+    use_sysroot = false
+    is_clang = false
+  }
+}
+endef
+
+export GN_TOOLCHAIN_FILE
+
+GN_CONFIG += custom_toolchain="//build/toolchain/linux/buildroot:default" \
+             host_toolchain="//build/toolchain/linux/buildroot:host" \
+             v8_snapshot_toolchain="//build/toolchain/linux/buildroot:host"
 
 
 define CHROMIUM_FIXUP_PYTHON_SCRIPTS
@@ -76,23 +131,31 @@ define CHROMIUM_CREATE_LOCAL_PYTHON_SYMLINK
         ln -sf '$(HOST_DIR)/usr/bin/python2' '$(@D)/python2-path/python'
 endef
 
-CHROMIUM_POST_PATCH_HOOKS += CHROMIUM_FIXUP_PYTHON_SCRIPTS CHROMIUM_CREATE_LOCAL_PYTHON_SYMLINK
-
-CHROMIUM_EXTRA_ENV = \
-        PYTHON='$(HOST_DIR)/usr/bin/python2' \
-        PATH="$(@D)/python2-path:$${PATH}"
-
-define CHROMIUM_CONFIGURE_CMDS
-        cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) python tools/gn/bootstrap/bootstrap.py \
-                --gn-gen-args '$(GN_CONFIG_COMMON)'
-        cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) out/$(CHROMIUM_BUILD_TYPE)/gn \
-                gen out/$(CHROMIUM_BUILD_TYPE) \
-                --args='$(GN_CONFIG_CROSS)' \
-                --script-executable='$(HOST_DIR)/usr/bin/python2'
+define CHROMIUM_CREATE_TEMP_DIR
+	mkdir -p '$(@D)/temp'
 endef
 
+CHROMIUM_POST_PATCH_HOOKS += CHROMIUM_FIXUP_PYTHON_SCRIPTS \
+                             CHROMIUM_CREATE_LOCAL_PYTHON_SYMLINK \
+                             CHROMIUM_CREATE_TEMP_DIR
+
+
+CHROMIUM_EXTRA_ENV = PYTHON='$(HOST_DIR)/usr/bin/python2' \
+                     PATH="$(@D)/python2-path:$(HOST_DIR)/usr/bin:$${PATH}" \
+                     TMPDIR='$(@D)/temp'
+
+CHROMIUM_NINJA = cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/ninja' -j$(PARALLEL_JOBS) -C 'out/$(CHROMIUM_BUILD_TYPE)'
+CHROMIUM_GN    = cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/gn'
+
+define CHROMIUM_CONFIGURE_CMDS
+        mkdir -p '$(@D)/build/toolchain/linux/buildroot'
+        echo "$${GN_TOOLCHAIN_FILE}" > '$(@D)/build/toolchain/linux/buildroot/BUILD.gn'
+        $(CHROMIUM_GN) gen 'out/$(CHROMIUM_BUILD_TYPE)' --args='$(GN_CONFIG)' --script-executable='$(HOST_DIR)/usr/bin/python2'
+endef
+
+
 define CHROMIUM_BUILD_CMDS
-        cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) ninja -C out/$(CHROMIUM_BUILD_TYPE) chrome chrome_sandbox mash:all
+        $(CHROMIUM_NINJA) chrome chrome_sandbox mash:all
 endef
 
 define CHROMIUM_INSTALL_TARGET_CMDS
