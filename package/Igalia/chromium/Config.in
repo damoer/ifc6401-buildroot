@@ -43,6 +43,15 @@ config BR2_PACKAGE_CHROMIUM
 	help
 	  The Chromium web browser.
 
+if BR2_PACKAGE_CHROMIUM
+
+config BR2_PACKAGE_CHROMIUM_CHROMEDRIVER
+	bool "Build chromedriver"
+	help
+	  Enables building and installing the WebDriver helper tool.
+
+endif
+
 comment "chromium needs a toolchain with w/ C++, wchar"
 	depends on BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
 	depends on !BR2_USE_WCHAR || !BR2_INSTALL_LIBSTDCPP
@@ -50,3 +59,4 @@ comment "chromium needs a toolchain with w/ C++, wchar"
 comment "chromium can only be built on a x86/x86_64 host"
 	depends on BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
 	depends on !BR2_PACKAGE_CHROMIUM_HOST_ARCH_SUPPORTS
+

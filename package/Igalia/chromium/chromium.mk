@@ -6,6 +6,9 @@ CHROMIUM_DEPENDENCIES = host-gn host-ninja libnss dbus wayland libegl \
                         libglib2 freetype alsa-lib pciutils fontconfig \
                         pulseaudio
 
+# Additional (optional) targets passed to Ninja for building.
+CHROMIUM_EXTRA_TARGETS =
+
 # TODO: arm_tune="cortex-a15"
 # TODO: arm_use_neon="..."
 # TODO: arm_fpu="vfpv4"
@@ -159,7 +162,8 @@ define CHROMIUM_BUILD_CMDS
         cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/ninja' \
                 -C 'out/$(CHROMIUM_BUILD_TYPE)' \
                 -j$(PARALLEL_JOBS) \
-                chrome chrome_sandbox mash:all
+                chrome chrome_sandbox mash:all \
+                $(CHROMIUM_EXTRA_TARGETS)
 endef
 
 define CHROMIUM_INSTALL_TARGET_CMDS
@@ -177,5 +181,18 @@ define CHROMIUM_INSTALL_TARGET_CMDS
                 '$(TARGET_DIR)/usr/lib/chromium/chrome-sandbox'
         ln -sf ../lib/chromium/chromium '$(TARGET_DIR)/usr/bin/chromium'
 endef
+
+
+define CHROMIUM_INSTALL_TARGET_CHROMEDRIVER
+        install -Dm755 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/chromedriver' \
+                '$(TARGET_DIR)/usr/lib/chromium/chromedriver'
+        ln -sf ../lib/chromium/chromedriver '$(TARGET_DIR)/usr/bin/chromedriver'
+endef
+
+ifeq ($(BR2_PACKAGE_CHROMIUM_CHROMEDRIVER),y)
+        CHROMIUM_POST_INSTALL_TARGET_HOOKS += CHROMIUM_INSTALL_TARGET_CHROMEDRIVER
+        CHROMIUM_EXTRA_TARGETS += chromedriver
+endif
+
 
 $(eval $(generic-package))
