@@ -5,6 +5,10 @@ config BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
 	default y if BR2_i386 || BR2_x86_64
 	default y if BR2_mips || BR2_mipsel || BR2_mips64 || BR2_mips64el
 
+config BR2_PACKAGE_CHROMIUM_HOST_ARCH_SUPPORTS
+	bool
+	default y if BR2_HOSTARCH = "x86" || BR2_HOSTARCH = "x86_64"
+
 config BR2_PACKAGE_CHROMIUM_TARGET_CPU
 	string
 	default "arm" if BR2_arm || BR2_armeb
@@ -16,10 +20,16 @@ config BR2_PACKAGE_CHROMIUM_TARGET_CPU
 	default "mips64" if BR2_mips64
 	default "mips64el" if BR2_mips64el
 
+config BR2_PACKAGE_CHROMIUM_HOST_CPU
+	string
+	default "x86" if BR2_HOSTARCH = "x86"
+	default "x64" if BR2_HOSTARCH = "x86_64"
+
 config BR2_PACKAGE_CHROMIUM
     bool "Build Chromium package"
     default y
 	depends on BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
+	depends on BR2_PACKAGE_CHROMIUM_HOST_ARCH_SUPPORTS
 	depends on BR2_INSTALL_LIBSTDCPP
 	depends on BR2_USE_WCHAR
 	select BR2_PACKAGE_ALSA_LIB
@@ -34,3 +44,7 @@ config BR2_PACKAGE_CHROMIUM
 comment "chromium needs a toolchain with w/ C++, wchar"
 	depends on BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
 	depends on !BR2_USE_WCHAR || !BR2_INSTALL_LIBSTDCPP
+
+comment "chromium can only be built on a x86/x86_64 host"
+	depends on BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
+	depends on !BR2_PACKAGE_CHROMIUM_HOST_ARCH_SUPPORTS

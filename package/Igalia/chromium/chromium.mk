@@ -107,7 +107,7 @@ gcc_toolchain("host") {
   extra_ldflags = "$(HOSTLDFLAGS)"
 
   toolchain_args = {
-    current_cpu = "x64"
+    current_cpu = $(BR2_PACKAGE_CHROMIUM_HOST_CPU)
     current_os = "linux"
     use_sysroot = false
     is_clang = false
