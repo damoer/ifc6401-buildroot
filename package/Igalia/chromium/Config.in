@@ -40,6 +40,8 @@ config BR2_PACKAGE_CHROMIUM
 	select BR2_PACKAGE_LIBNSS
 	select BR2_PACKAGE_PCIUTILS
 	select BR2_PACKAGE_PULSEAUDIO
+	help
+	  The Chromium web browser.
 
 comment "chromium needs a toolchain with w/ C++, wchar"
 	depends on BR2_PACKAGE_CHROMIUM_ARCH_SUPPORTS
