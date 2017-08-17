@@ -144,37 +144,38 @@ CHROMIUM_EXTRA_ENV = PYTHON='$(HOST_DIR)/usr/bin/python2' \
                      PATH="$(@D)/python2-path:$(HOST_DIR)/usr/bin:$${PATH}" \
                      TMPDIR='$(@D)/temp'
 
-CHROMIUM_NINJA = cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/ninja' -j$(PARALLEL_JOBS) -C 'out/$(CHROMIUM_BUILD_TYPE)'
-CHROMIUM_GN    = cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/gn'
 
 define CHROMIUM_CONFIGURE_CMDS
         mkdir -p '$(@D)/build/toolchain/linux/buildroot'
         echo "$${GN_TOOLCHAIN_FILE}" > '$(@D)/build/toolchain/linux/buildroot/BUILD.gn'
-        $(CHROMIUM_GN) gen 'out/$(CHROMIUM_BUILD_TYPE)' --args='$(GN_CONFIG)' --script-executable='$(HOST_DIR)/usr/bin/python2'
+        cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/gn' \
+                gen 'out/$(CHROMIUM_BUILD_TYPE)' \
+                --args='$(GN_CONFIG)' \
+                --script-executable='$(HOST_DIR)/usr/bin/python2'
 endef
 
 
 define CHROMIUM_BUILD_CMDS
-        $(CHROMIUM_NINJA) chrome chrome_sandbox mash:all
+        cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/ninja' \
+                -C 'out/$(CHROMIUM_BUILD_TYPE)' \
+                -j$(PARALLEL_JOBS) \
+                chrome chrome_sandbox mash:all
 endef
 
 define CHROMIUM_INSTALL_TARGET_CMDS
-        mkdir -p $(TARGET_DIR)/usr/lib/chromium/ && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome $(TARGET_DIR)/usr/lib/chromium/chromium && \
-        chmod 755 $(TARGET_DIR)/usr/lib/chromium/chromium && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome_sandbox $(TARGET_DIR)/usr/lib/chromium/chrome-sandbox && \
-        chmod 4755 $(TARGET_DIR)/usr/lib/chromium/chrome-sandbox && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome $(TARGET_DIR)/usr/lib/chromium/chromedriver && \
-        chmod 755 $(TARGET_DIR)/usr/lib/chromium/chromedriver && \
-        ln -svf $(TARGET_DIR)/usr/lib/chromium/chromium $(TARGET_DIR)/usr/bin && \
-        ln -svf $(TARGET_DIR)/usr/lib/chromium/chromedriver $(TARGET_DIR)/usr/bin/ && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/icudtl.dat $(TARGET_DIR)/usr/lib/chromium/ && \
-        chmod 644 $(TARGET_DIR)/usr/lib/chromium/icudtl.dat && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/gen/content/content_resources.pak $(TARGET_DIR)/usr/lib/chromium/ && \
-        chmod 644 $(TARGET_DIR)/usr/lib/chromium/content_resources.pak && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/*.pak $(TARGET_DIR)/usr/lib/chromium/ && \
-        chmod 644 $(TARGET_DIR)/usr/lib/chromium/*.pak && \
-        cp -av $(@D)/out/$(CHROMIUM_BUILD_TYPE)/locales $(TARGET_DIR)/usr/lib/chromium/
+        install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium' \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.pak \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/{mash_catalog.json,icudtl.dat}'
+        install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium/locales' \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/locales/*.pak
+        install -Dm755 -t '$(TARGET_DIR)/usr/lib/chromium' \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.{so,service} \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/mash
+        install -Dm755 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome' \
+                '$(TARGET_DIR)/usr/lib/chromium/chromium'
+        install -Dm4755 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome_sandbox' \
+                '$(TARGET_DIR)/usr/lib/chromium/chrome-sandbox'
+        ln -sf ../lib/chromium/chromium '$(TARGET_DIR)/usr/bin/chromium'
 endef
 
 $(eval $(generic-package))
