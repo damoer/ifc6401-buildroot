@@ -169,7 +169,8 @@ endef
 define CHROMIUM_INSTALL_TARGET_CMDS
         install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium' \
                 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.pak \
-                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/{mash_catalog.json,icudtl.dat}'
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/mash_catalog.json' \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/icudtl.dat'
         install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium/locales' \
                 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/locales/*.pak
         install -Dm755 -t '$(TARGET_DIR)/usr/lib/chromium' \
