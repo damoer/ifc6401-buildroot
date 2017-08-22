@@ -1,4 +1,4 @@
-CHROMIUM_VERSION = ac0ab56
+CHROMIUM_VERSION = 65b3572
 CHROMIUM_SOURCE = chromium-wayland-$(CHROMIUM_VERSION).tar.xz
 CHROMIUM_SITE = https://tmp.igalia.com/chromium-tarballs
 
@@ -162,20 +162,18 @@ define CHROMIUM_BUILD_CMDS
         cd '$(@D)' && $(CHROMIUM_EXTRA_ENV) '$(HOST_DIR)/usr/bin/ninja' \
                 -C 'out/$(CHROMIUM_BUILD_TYPE)' \
                 -j$(PARALLEL_JOBS) \
-                chrome chrome_sandbox mash:all \
+                chrome chrome_sandbox \
                 $(CHROMIUM_EXTRA_TARGETS)
 endef
 
 define CHROMIUM_INSTALL_TARGET_CMDS
         install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium' \
                 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.pak \
-                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/mash_catalog.json' \
                 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/icudtl.dat'
         install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium/locales' \
                 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/locales/*.pak
         install -Dm755 -t '$(TARGET_DIR)/usr/lib/chromium' \
-                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.{so,service} \
-                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/mash
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.service
         install -Dm755 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome' \
                 '$(TARGET_DIR)/usr/lib/chromium/chromium'
         install -Dm4755 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/chrome_sandbox' \
