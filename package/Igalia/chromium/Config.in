@@ -32,6 +32,9 @@ config BR2_PACKAGE_CHROMIUM
 	depends on BR2_PACKAGE_CHROMIUM_HOST_ARCH_SUPPORTS
 	depends on BR2_INSTALL_LIBSTDCPP
 	depends on BR2_USE_WCHAR
+	depends on BR2_TOOLCHAIN_HAS_THREADS
+	# ICU requires an ELF system
+	depends on !BR2_BINFMT_FLAT
 	select BR2_PACKAGE_ALSA_LIB
 	select BR2_PACKAGE_DBUS
 	select BR2_PACKAGE_FONTCONFIG
@@ -49,6 +52,14 @@ config BR2_PACKAGE_CHROMIUM_CHROMEDRIVER
 	bool "Build chromedriver"
 	help
 	  Enables building and installing the WebDriver helper tool.
+
+config BR2_PACKAGE_CHROMIUM_SYSTEM_ICU
+	bool "Use system ICU library"
+	default y
+	select BR2_PACKAGE_ICU
+	help
+	  If disabled, use the copy of the ICU library included as part of the
+	  Chromium sources; otherwise use the Buildroot ICU package.
 
 endif
 

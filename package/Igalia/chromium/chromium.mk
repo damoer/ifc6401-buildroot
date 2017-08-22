@@ -9,6 +9,15 @@ CHROMIUM_DEPENDENCIES = host-gn host-ninja libnss dbus wayland libegl \
 # Additional (optional) targets passed to Ninja for building.
 CHROMIUM_EXTRA_TARGETS =
 
+# Libraries for which the Buildroot packages will be used, instead of the
+# versions bundled with the Chromium sources.
+CHROMIUM_SYSTEM_LIBS =
+
+ifeq ($(BR2_PACKAGE_CHROMIUM_SYSTEM_ICU),y)
+CHROMIUM_SYSTEM_LIBS += icu
+CHROMIUM_DEPENDENCIES += icu
+endif
+
 # TODO: arm_tune="cortex-a15"
 # TODO: arm_use_neon="..."
 # TODO: arm_fpu="vfpv4"
@@ -156,6 +165,16 @@ define CHROMIUM_CONFIGURE_CMDS
                 --args='$(GN_CONFIG)' \
                 --script-executable='$(HOST_DIR)/usr/bin/python2'
 endef
+
+define CHROMIUM_UNBUNDLE_SYSTEM_LIBS
+        cd '$(@D)' && '$(HOST_DIR)/usr/bin/python' \
+                build/linux/unbundle/replace_gn_files.py \
+                --system-libraries $(CHROMIUM_SYSTEM_LIBS)
+endef
+
+ifneq ($(strip $(CHROMIUM_SYSTEM_LIBS)),)
+CHROMIUM_PRE_CONFIGURE_HOOKS += CHROMIUM_UNBUNDLE_SYSTEM_LIBS
+endif
 
 
 define CHROMIUM_BUILD_CMDS
