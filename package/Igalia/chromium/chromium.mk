@@ -104,10 +104,10 @@ gcc_toolchain("host") {
   nm = "$(HOSTNM)"
   ld = cxx
 
-  extra_cflags = "$(HOSTCFLAGS)"
-  extra_cxxflags = "$(HOSTCXXFLAGS)"
-  extra_cppflags = "$(HOSTCPPFLAGS)"
-  extra_ldflags = "$(HOSTLDFLAGS)"
+  extra_cflags = "$(HOST_CFLAGS)"
+  extra_cxxflags = "$(HOST_CXXFLAGS)"
+  extra_cppflags = "$(HOST_CPPFLAGS)"
+  extra_ldflags = "$(HOST_LDFLAGS)"
 
   toolchain_args = {
     current_cpu = $(BR2_PACKAGE_CHROMIUM_HOST_CPU)
