@@ -73,7 +73,7 @@ GN_CONFIG += is_debug=true remove_webcore_debug_symbols=false
 else
 CHROMIUM_BUILD_TYPE = Release
 GN_TOOLCHAIN_TARGET_STRIP = strip = "$(TARGET_STRIP)"
-GN_CONFIG += is_debug=false remove_webcore_debug_symbols=true
+GN_CONFIG += is_debug=false is_official_build=true remove_webcore_debug_symbols=true
 endif
 
 ifneq ($(BR2_ARM_INSTRUCTIONS_THUMB)$(BR2_ARM_INSTRUCTIONS_THUMB2),)
