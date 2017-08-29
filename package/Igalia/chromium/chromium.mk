@@ -32,6 +32,7 @@ GN_CONFIG = clang_use_chrome_plugins=false \
             enable_package_mash_services=true \
             fatal_linker_warnings=false \
             gold_path="" \
+            host_pkg_config="/usr/bin/pkg-config" \
             is_clang=false \
             is_component_build=false \
             linux_use_bundled_binutils=false \
