@@ -13,7 +13,6 @@ DYZ_DEPENDENCIES = luajit
 DYZ_MAKE_ENV = \
 	$(TARGET_MAKE_ENV) \
 	CC=$(TARGET_CC) \
-	PKG_CONFIG="$(HOST_DIR)/bin/pkg-config" \
 	PKG_CONFIG_PATH="$(TARGET_DIR)/usr/lib/pkgconfig"
 
 $(eval $(autotools-package))
