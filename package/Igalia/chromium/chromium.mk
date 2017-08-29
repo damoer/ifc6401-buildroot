@@ -1,4 +1,4 @@
-CHROMIUM_VERSION = 65b3572
+CHROMIUM_VERSION = 3ea904e
 CHROMIUM_SOURCE = chromium-wayland-$(CHROMIUM_VERSION).tar.xz
 CHROMIUM_SITE = https://tmp.igalia.com/chromium-tarballs
 
