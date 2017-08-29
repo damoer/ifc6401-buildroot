@@ -16,6 +16,8 @@ CHROMIUM_SYSTEM_LIBS =
 ifeq ($(BR2_PACKAGE_CHROMIUM_SYSTEM_ICU),y)
 CHROMIUM_SYSTEM_LIBS += icu
 CHROMIUM_DEPENDENCIES += icu
+else
+CHROMIUM_POST_INSTALL_TARGET_HOOKS += CHROMIUM_INSTALL_TARGET_ICU_DATA
 endif
 
 # TODO: arm_tune="cortex-a15"
@@ -187,8 +189,7 @@ endef
 
 define CHROMIUM_INSTALL_TARGET_CMDS
         install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium' \
-                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.pak \
-                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/icudtl.dat'
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/*.pak
         install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium/locales' \
                 '$(@D)/out/$(CHROMIUM_BUILD_TYPE)'/locales/*.pak
         install -Dm755 -t '$(TARGET_DIR)/usr/lib/chromium' \
@@ -211,6 +212,11 @@ ifeq ($(BR2_PACKAGE_CHROMIUM_CHROMEDRIVER),y)
         CHROMIUM_POST_INSTALL_TARGET_HOOKS += CHROMIUM_INSTALL_TARGET_CHROMEDRIVER
         CHROMIUM_EXTRA_TARGETS += chromedriver
 endif
+
+define CHROMIUM_INSTALL_TARGET_ICU_DATA
+        install -Dm644 -t '$(TARGET_DIR)/usr/lib/chromium' \
+                '$(@D)/out/$(CHROMIUM_BUILD_TYPE)/icudtl.dat'
+endef
 
 
 $(eval $(generic-package))
