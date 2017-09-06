@@ -4,8 +4,9 @@
 #
 ################################################################################
 
-WPEWEBKIT_VERSION = 2b4ada899b08467da2a76fff2a41b9e616e00af2
-WPEWEBKIT_SITE = $(call github,WebKit,webkit,$(WPEWEBKIT_VERSION))
+WPEWEBKIT_VERSION = 2.17.92.4
+WPEWEBKIT_SITE = http://people.igalia.com/aperez/files/wpe
+WPEWEBKIT_SOURCE = wpewebkit-$(WPEWEBKIT_VERSION).tar.xz
 
 WPEWEBKIT_INSTALL_STAGING = YES
 
