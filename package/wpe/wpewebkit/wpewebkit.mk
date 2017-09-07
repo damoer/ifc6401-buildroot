@@ -29,7 +29,7 @@ WPEWEBKIT_DEPENDENCIES = host-bison host-cmake host-flex host-gperf host-ruby ic
 
 ifeq ($(WPEWEBKIT_BUILD_WEBKIT),y)
 WPEWEBKIT_DEPENDENCIES += wpebackend libgcrypt libgles libegl cairo freetype fontconfig \
-	harfbuzz libxml2 libxslt sqlite libsoup jpeg libpng libepoxy
+	harfbuzz libxml2 libxslt sqlite libsoup jpeg libpng libepoxy webp
 endif
 
 WPEWEBKIT_EXTRA_FLAGS = -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -78,10 +78,6 @@ ifeq ($(BR2_TOOLCHAIN_USES_MUSL),y)
 WPEWEBKIT_FLAGS += -DENABLE_SAMPLING_PROFILER=OFF
 else
 WPEWEBKIT_FLAGS += -DENABLE_SAMPLING_PROFILER=ON
-endif
-
-ifeq ($(BR2_PACKAGE_WEBP),y)
-WPEWEBKIT_DEPENDENCIES += webp
 endif
 
 ifeq ($(BR2_PACKAGE_WPEWEBKIT_ENABLE_NATIVE_VIDEO),y)
