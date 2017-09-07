@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WPEWEBKIT_VERSION = 2.17.92.10
+WPEWEBKIT_VERSION = 2.17.92.15
 WPEWEBKIT_SITE = http://people.igalia.com/aperez/files/wpe
 WPEWEBKIT_SOURCE = wpewebkit-$(WPEWEBKIT_VERSION).tar.xz
 WPEWEBKIT_LICENSE = LGPv2.1+, BSD-2c
@@ -185,8 +185,6 @@ endif
 ifeq ($(BR2_PACKAGE_WPEWEBKIT_ONLY_JSC), y)
 WPEWEBKIT_FLAGS += -DENABLE_STATIC_JSC=ON
 endif
-
-WPEWEBKIT_EXTRA_FLAGS += -DCMAKE_CXX_FLAGS="-DMESA_EGL_NO_X11_HEADERS"
 
 WPEWEBKIT_CONF_OPTS = \
 	-DPORT=$(WPEWEBKIT_USE_PORT) \
