@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WEBKITGTK_VERSION = 2.16.6
+WEBKITGTK_VERSION = 2.17.92
 WEBKITGTK_SITE = http://www.webkitgtk.org/releases
 WEBKITGTK_SOURCE = webkitgtk-$(WEBKITGTK_VERSION).tar.xz
 WEBKITGTK_INSTALL_STAGING = YES
@@ -26,8 +26,7 @@ WEBKITGTK_CONF_OPTS = \
 	-DUSE_LIBNOTIFY=OFF \
 	-DUSE_LIBHYPHEN=OFF
 
-
-WEBKITGTK_CONF_OPTS += -DCMAKE_CXX_FLAGS=" -Wno-cast-align"
+WEBKITGTK_CONF_OPTS += -DCMAKE_CXX_FLAGS="-DMESA_EGL_NO_X11_HEADERS"
 
 # ARM needs NEON for JIT
 # i386 & x86_64 don't seem to have any special requirements
