@@ -4,7 +4,7 @@
 #
 ################################################################################
 
-WPEWEBKIT_VERSION = 2.17.92.15
+WPEWEBKIT_VERSION = 2.18.0.9
 WPEWEBKIT_SITE = http://people.igalia.com/aperez/files/wpe
 WPEWEBKIT_SOURCE = wpewebkit-$(WPEWEBKIT_VERSION).tar.xz
 WPEWEBKIT_LICENSE = LGPv2.1+, BSD-2c
