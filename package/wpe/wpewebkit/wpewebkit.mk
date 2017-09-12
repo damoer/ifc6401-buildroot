@@ -261,6 +261,12 @@ endef
 
 endif
 
+# CMake is crap, so apply duct tape to avoid including X11 headers.
+define WPEWEBKIT_FIX_MESA_NO_X11_DEFS
+	echo 'add_definitions(-DMESA_EGL_NO_X11_HEADERS)' >> '$(@D)/Source/cmake/OptionsWPE.cmake'
+endef
+WPEWEBKIT_POST_EXTRACT_HOOKS += WPEWEBKIT_FIX_MESA_NO_X11_DEFS
+
 RSYNC_VCS_EXCLUSIONS += --exclude LayoutTests --exclude WebKitBuild
 
 $(eval $(cmake-package))
