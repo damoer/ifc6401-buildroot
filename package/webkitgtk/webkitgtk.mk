@@ -26,6 +26,9 @@ WEBKITGTK_CONF_OPTS = \
 	-DUSE_LIBNOTIFY=OFF \
 	-DUSE_LIBHYPHEN=OFF
 
+
+WEBKITGTK_CONF_OPTS += -DCMAKE_CXX_FLAGS=" -Wno-cast-align"
+
 # ARM needs NEON for JIT
 # i386 & x86_64 don't seem to have any special requirements
 ifeq ($(BR2_ARM_CPU_HAS_NEON)$(BR2_i386)$(BR2_x86_64),y)
